@@ -228,7 +228,7 @@
   document.getElementById('pdfBtn').addEventListener('click', downloadPDF);
   document.getElementById('clearBtn').addEventListener('click', clearAll);
 
-  // Auto-fill from ?vals= and draw the graph once everything (incl. Chart.js) has loaded
+  // ---- Auto-fill from ?vals= and draw the graph, after everything loads ----
   function autoLoad(){
     const valsParam = params.get('vals');
     if (!valsParam) return;
@@ -241,7 +241,11 @@
     updateCount();
     generate();
   }
-  window.addEventListener('load', autoLoad);
+  if (document.readyState === 'complete') {
+    autoLoad();
+  } else {
+    window.addEventListener('load', autoLoad);
+  }
 </script>
 </body>
 </html>
