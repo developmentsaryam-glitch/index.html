@@ -91,7 +91,6 @@
       <div class="phead">
         <h2>Graph</h2>
         <div class="actions" style="margin:0;">
-          <button class="btn-ghost" id="backBtn">← Back to Form</button>
           <button class="btn-ghost" id="clearBtn">Clear</button>
           <button class="btn-ghost" id="dlBtn" disabled>PNG</button>
           <button class="btn-ghost" id="pdfBtn" disabled>PDF</button>
@@ -228,12 +227,11 @@
   document.getElementById('dlBtn').addEventListener('click', download);
   document.getElementById('pdfBtn').addEventListener('click', downloadPDF);
   document.getElementById('clearBtn').addEventListener('click', clearAll);
-  document.getElementById('backBtn').addEventListener('click', () => {
-    window.parent.history.back();
-  });
 
-  const valsParam = params.get('vals');
-  if (valsParam) {
+  // Auto-fill from ?vals= and draw the graph once everything (incl. Chart.js) has loaded
+  function autoLoad(){
+    const valsParam = params.get('vals');
+    if (!valsParam) return;
     const arr = valsParam.split(',');
     inputs.forEach((el, i) => {
       if (arr[i] !== undefined && arr[i].trim() !== '') {
@@ -243,6 +241,7 @@
     updateCount();
     generate();
   }
+  window.addEventListener('load', autoLoad);
 </script>
 </body>
 </html>
