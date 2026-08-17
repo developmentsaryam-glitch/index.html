@@ -91,12 +91,12 @@
       <div class="phead">
         <h2>Graph</h2>
         <div class="actions" style="margin:0;">
-  <button class="btn-ghost" id="backBtn">← Back to Form</button>
-  <button class="btn-ghost" id="clearBtn">Clear</button>
-  <button class="btn-ghost" id="dlBtn" disabled>PNG</button>
-  <button class="btn-ghost" id="pdfBtn" disabled>PDF</button>
-  <button class="btn-primary" id="genBtn">Generate graph</button>
-</div>
+          <button class="btn-ghost" id="backBtn">← Back to Form</button>
+          <button class="btn-ghost" id="clearBtn">Clear</button>
+          <button class="btn-ghost" id="dlBtn" disabled>PNG</button>
+          <button class="btn-ghost" id="pdfBtn" disabled>PDF</button>
+          <button class="btn-primary" id="genBtn">Generate graph</button>
+        </div>
       </div>
       <div class="canvas-box">
         <div class="empty" id="empty">No graph yet — fill the values and press Generate graph.</div>
@@ -229,24 +229,20 @@
   document.getElementById('pdfBtn').addEventListener('click', downloadPDF);
   document.getElementById('clearBtn').addEventListener('click', clearAll);
   document.getElementById('backBtn').addEventListener('click', () => {
-  window.close();
-});
-
-const valsParam = params.get('vals');
-
-if (valsParam) {
-  const arr = valsParam.split(',');
-
-  inputs.forEach((el, i) => {
-    if (arr[i] !== undefined && arr[i].trim() !== '') {
-      el.value = arr[i].trim();
-    }
+    window.parent.history.back();
   });
 
-  updateCount();
-  generate();
-}
-  
+  const valsParam = params.get('vals');
+  if (valsParam) {
+    const arr = valsParam.split(',');
+    inputs.forEach((el, i) => {
+      if (arr[i] !== undefined && arr[i].trim() !== '') {
+        el.value = arr[i].trim();
+      }
+    });
+    updateCount();
+    generate();
+  }
 </script>
 </body>
 </html>
