@@ -4,20 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Power Chart</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#f4f6fa; --card:#ffffff; --border:#e5e9f0; --line:#eef1f6;
     --ink:#1f2937; --muted:#6b7280; --blue:#2563eb; --blue-dk:#1d4ed8;
-    --blue-soft:#e6f1fb; --cyan:#06b6d4; --green:#16a34a; --radius:12px;
+    --blue-soft:#e6f1fb; --radius:12px;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);
-    font-family:Inter,Segoe UI,Arial,sans-serif;-webkit-font-smoothing:antialiased;padding:24px;}
+    font-family:Segoe UI,Arial,sans-serif;padding:24px;}
   .wrap{max-width:1040px;margin:0 auto;}
   header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
   .mark{width:6px;height:34px;border-radius:3px;background:var(--blue);}
@@ -25,30 +22,23 @@
   .sub{font-size:13px;color:var(--muted);margin-top:2px;}
   .grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;}
   .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-    padding:18px 20px;box-shadow:0 1px 2px rgba(16,24,40,.04);}
+    padding:18px 20px;}
   .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap;}
   .phead h2{font-size:14px;font-weight:600;margin:0;}
   .count{font-size:12px;font-weight:500;color:var(--muted);
-    background:var(--line);border-radius:20px;padding:3px 10px;font-variant-numeric:tabular-nums;}
+    background:var(--line);border-radius:20px;padding:3px 10px;}
   .row{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
-  .pct{width:46px;font-size:13px;font-weight:500;color:var(--muted);text-align:right;
-    font-variant-numeric:tabular-nums;}
+  .pct{width:46px;font-size:13px;font-weight:500;color:var(--muted);text-align:right;}
   .row input{flex:1;height:38px;border:1px solid var(--border);border-radius:8px;
-    padding:0 12px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);
-    background:#fbfcfe;transition:border-color .12s,box-shadow .12s,background .12s;}
-  .row input::placeholder{color:#b6bcc8;}
-  .row input:hover{border-color:#cfd6e2;}
+    padding:0 12px;font-size:14px;color:var(--ink);background:#fbfcfe;}
   .row input:focus{outline:none;border-color:var(--blue);background:#fff;
     box-shadow:0 0 0 3px var(--blue-soft);}
   .row input.filled{background:#fff;border-color:#bcd3f2;}
   .actions{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
   button{font-family:inherit;font-size:14px;font-weight:500;height:38px;padding:0 16px;
-    border-radius:8px;cursor:pointer;border:1px solid transparent;
-    transition:background .12s,border-color .12s,opacity .12s;}
+    border-radius:8px;cursor:pointer;border:1px solid transparent;}
   .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
-  .btn-primary:hover{background:var(--blue-dk);border-color:var(--blue-dk);}
   .btn-ghost{background:#fff;color:var(--ink);border-color:var(--border);}
-  .btn-ghost:hover{border-color:#cfd6e2;}
   button:disabled{opacity:.45;cursor:not-allowed;}
   .canvas-box{position:relative;height:440px;}
   .empty{display:flex;align-items:center;justify-content:center;height:440px;text-align:center;
@@ -74,17 +64,16 @@
         <h2>Power values</h2>
         <span class="count" id="count">0 / 10</span>
       </div>
-
-      <div class="row"><span class="pct">10%</span><input type="text" inputmode="decimal" data-pct="10" placeholder="value"></div>
-      <div class="row"><span class="pct">20%</span><input type="text" inputmode="decimal" data-pct="20" placeholder="value"></div>
-      <div class="row"><span class="pct">30%</span><input type="text" inputmode="decimal" data-pct="30" placeholder="value"></div>
-      <div class="row"><span class="pct">40%</span><input type="text" inputmode="decimal" data-pct="40" placeholder="value"></div>
-      <div class="row"><span class="pct">50%</span><input type="text" inputmode="decimal" data-pct="50" placeholder="value"></div>
-      <div class="row"><span class="pct">60%</span><input type="text" inputmode="decimal" data-pct="60" placeholder="value"></div>
-      <div class="row"><span class="pct">70%</span><input type="text" inputmode="decimal" data-pct="70" placeholder="value"></div>
-      <div class="row"><span class="pct">80%</span><input type="text" inputmode="decimal" data-pct="80" placeholder="value"></div>
-      <div class="row"><span class="pct">90%</span><input type="text" inputmode="decimal" data-pct="90" placeholder="value"></div>
-      <div class="row" style="margin-bottom:0;"><span class="pct">100%</span><input type="text" inputmode="decimal" data-pct="100" placeholder="value"></div>
+      <div class="row"><span class="pct">10%</span><input type="text" data-pct="10" placeholder="value"></div>
+      <div class="row"><span class="pct">20%</span><input type="text" data-pct="20" placeholder="value"></div>
+      <div class="row"><span class="pct">30%</span><input type="text" data-pct="30" placeholder="value"></div>
+      <div class="row"><span class="pct">40%</span><input type="text" data-pct="40" placeholder="value"></div>
+      <div class="row"><span class="pct">50%</span><input type="text" data-pct="50" placeholder="value"></div>
+      <div class="row"><span class="pct">60%</span><input type="text" data-pct="60" placeholder="value"></div>
+      <div class="row"><span class="pct">70%</span><input type="text" data-pct="70" placeholder="value"></div>
+      <div class="row"><span class="pct">80%</span><input type="text" data-pct="80" placeholder="value"></div>
+      <div class="row"><span class="pct">90%</span><input type="text" data-pct="90" placeholder="value"></div>
+      <div class="row" style="margin-bottom:0;"><span class="pct">100%</span><input type="text" data-pct="100" placeholder="value"></div>
     </div>
 
     <div class="panel">
@@ -107,27 +96,18 @@
 </div>
 
 <script>
-  const STEPS = [10,20,30,40,50,60,70,80,90,100];
-  const inputs = Array.from(document.querySelectorAll('input[data-pct]'));
-  const params = new URLSearchParams(location.search);
-  const logId = params.get('logId') || params.get('recordId') || '';
+  var STEPS = [10,20,30,40,50,60,70,80,90,100];
+  var inputs = Array.prototype.slice.call(document.querySelectorAll('input[data-pct]'));
+  var params = new URLSearchParams(location.search);
+  var logId = params.get('logId') || '';
   if (logId) document.getElementById('sub').textContent = 'Log: ' + logId;
 
-  let chart = null;
-
-  function sanitize(el){
-    let v = el.value.replace(/[^0-9.\-]/g, '');
-    const neg = v.startsWith('-');
-    v = v.replace(/-/g, '');
-    const parts = v.split('.');
-    v = parts.shift() + (parts.length ? '.' + parts.join('') : '');
-    el.value = (neg ? '-' : '') + v;
-  }
+  var chart = null;
 
   function updateCount(){
-    let filled = 0;
-    inputs.forEach(el => {
-      const has = el.value.trim() !== '';
+    var filled = 0;
+    inputs.forEach(function(el){
+      var has = el.value.trim() !== '';
       el.classList.toggle('filled', has);
       if (has) filled++;
     });
@@ -135,85 +115,80 @@
     return filled;
   }
 
-  inputs.forEach(el => {
-    el.addEventListener('input', () => { sanitize(el); updateCount(); });
-    el.addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
+  inputs.forEach(function(el){
+    el.addEventListener('input', updateCount);
+    el.addEventListener('keydown', function(e){ if (e.key === 'Enter') generate(); });
   });
 
-  const whiteBg = {
+  var whiteBg = {
     id:'whiteBg',
-    beforeDraw(c){ const x=c.ctx; x.save(); x.globalCompositeOperation='destination-over';
+    beforeDraw:function(c){ var x=c.ctx; x.save(); x.globalCompositeOperation='destination-over';
       x.fillStyle='#ffffff'; x.fillRect(0,0,c.width,c.height); x.restore(); }
   };
 
   function generate(){
-    const hint = document.getElementById('hint');
-    const vals = inputs.map(el => el.value.trim() === '' ? null : Number(el.value));
-    const filled = vals.filter(v => v !== null).length;
+    var hint = document.getElementById('hint');
+    var vals = inputs.map(function(el){ return el.value.trim() === '' ? null : Number(el.value); });
+    var filled = vals.filter(function(v){ return v !== null; }).length;
     if (filled === 0){ hint.textContent = 'Enter at least one value first.'; return; }
-    hint.textContent = filled < 10 ? (filled + ' of 10 values entered — graph drawn from filled points.') : '';
+    hint.textContent = filled < 10 ? (filled + ' of 10 values entered.') : '';
 
     document.getElementById('empty').style.display = 'none';
-    const cv = document.getElementById('chart');
+    var cv = document.getElementById('chart');
     cv.style.display = 'block';
 
-    const cfg = {
+    if (chart) chart.destroy();
+    chart = new Chart(cv.getContext('2d'), {
       type:'line',
-      data:{ labels: STEPS.map(p => p + '%'),
+      data:{ labels: STEPS.map(function(p){ return p + '%'; }),
         datasets:[{ label:'Power', data: vals, spanGaps:true,
           borderColor:'#2563eb', backgroundColor:'rgba(6,182,212,.12)',
           borderWidth:2, fill:true, tension:.3,
-          pointBackgroundColor:'#2563eb', pointRadius:4, pointHoverRadius:6 }] },
+          pointBackgroundColor:'#2563eb', pointRadius:4 }] },
       options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false},
-          title:{display:!!logId, text: logId ? ('Power Chart — ' + logId) : '',
-            color:'#1f2937', font:{family:'Inter',size:14,weight:'600'}} },
+        plugins:{ legend:{display:false} },
         scales:{
-          y:{title:{display:true,text:'Power',color:'#6b7280'}, grid:{color:'#eef1f6'}, ticks:{color:'#6b7280'}, beginAtZero:true},
-          x:{title:{display:true,text:'Percentage',color:'#6b7280'}, grid:{color:'#eef1f6'}, ticks:{color:'#6b7280'}} }
+          y:{ title:{display:true,text:'Power'}, beginAtZero:true },
+          x:{ title:{display:true,text:'Percentage'} } }
       },
       plugins:[whiteBg]
-    };
-    if (chart) chart.destroy();
-    chart = new Chart(cv.getContext('2d'), cfg);
+    });
     document.getElementById('dlBtn').disabled = false;
     document.getElementById('pdfBtn').disabled = false;
   }
 
   function download(){
     if (!chart) return;
-    const a = document.createElement('a');
+    var a = document.createElement('a');
     a.href = chart.toBase64Image('image/png', 1);
-    a.download = 'PowerChart' + (logId ? '_' + logId : '') + '.png';
+    a.download = 'PowerChart.png';
     a.click();
   }
 
   function downloadPDF(){
     if (!chart) return;
     if (!window.jspdf){ document.getElementById('hint').textContent = 'PDF library did not load.'; return; }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
-    const W = doc.internal.pageSize.getWidth();
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
     doc.setFont('helvetica','bold'); doc.setFontSize(14);
-    doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 42);
-    const img = chart.toBase64Image('image/png', 1);
-    const ratio = chart.height / chart.width;
-    const imgW = (W - 80) * 0.70, imgH = imgW * ratio;
+    doc.text('Power Chart', 40, 42);
+    var img = chart.toBase64Image('image/png', 1);
+    var W = doc.internal.pageSize.getWidth();
+    var imgW = (W - 80) * 0.70, imgH = imgW * (chart.height / chart.width);
     doc.addImage(img, 'PNG', 40, 62, imgW, imgH);
-    let tx = 40 + imgW + 28, ty = 74;
+    var tx = 40 + imgW + 28, ty = 74;
     doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Values', tx, ty); ty += 18;
     doc.setFont('helvetica','normal');
-    STEPS.forEach((p, i) => {
-      const v = inputs[i].value.trim() || '-';
+    STEPS.forEach(function(p, i){
       doc.text(p + '%', tx, ty);
-      doc.text(String(v), tx + 64, ty);
+      doc.text(String(inputs[i].value.trim() || '-'), tx + 64, ty);
       ty += 17;
     });
-    doc.save('PowerChart' + (logId ? '_' + logId : '') + '.pdf');
+    doc.save('PowerChart.pdf');
   }
 
   function clearAll(){
-    inputs.forEach(el => el.value = '');
+    inputs.forEach(function(el){ el.value = ''; });
     updateCount();
     if (chart){ chart.destroy(); chart = null; }
     document.getElementById('chart').style.display = 'none';
@@ -228,24 +203,19 @@
   document.getElementById('pdfBtn').addEventListener('click', downloadPDF);
   document.getElementById('clearBtn').addEventListener('click', clearAll);
 
-  // ---- Auto-fill from ?vals= and draw the graph, after everything loads ----
   function autoLoad(){
-    const valsParam = params.get('vals');
+    var valsParam = params.get('vals');
     if (!valsParam) return;
-    const arr = valsParam.split(',');
-    inputs.forEach((el, i) => {
-      if (arr[i] !== undefined && arr[i].trim() !== '') {
-        el.value = arr[i].trim();
-      }
+    var arr = valsParam.split(',');
+    inputs.forEach(function(el, i){
+      if (arr[i] !== undefined && arr[i].trim() !== '') el.value = arr[i].trim();
     });
     updateCount();
     generate();
   }
-  if (document.readyState === 'complete') {
-    autoLoad();
-  } else {
-    window.addEventListener('load', autoLoad);
-  }
+
+  if (document.readyState === 'complete') { autoLoad(); }
+  else { window.addEventListener('load', autoLoad); }
 </script>
 </body>
 </html>
