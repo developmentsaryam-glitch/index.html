@@ -227,6 +227,22 @@
   document.getElementById('dlBtn').addEventListener('click', download);
   document.getElementById('pdfBtn').addEventListener('click', downloadPDF);
   document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+const valsParam = params.get('vals');
+
+if (valsParam) {
+  const arr = valsParam.split(',');
+
+  inputs.forEach((el, i) => {
+    if (arr[i] !== undefined && arr[i].trim() !== '') {
+      el.value = arr[i].trim();
+    }
+  });
+
+  updateCount();
+  generate();
+}
+  
 </script>
 </body>
 </html>
