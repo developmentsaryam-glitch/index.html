@@ -236,7 +236,7 @@
     const url = API_URL + "?publickey=" + PUBLIC_KEY;
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "text/plain" },
       body: body
     });
     return res.text();
