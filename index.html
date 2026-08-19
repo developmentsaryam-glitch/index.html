@@ -4,17 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Power Chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#f4f6fa; --card:#ffffff; --border:#e5e9f0; --line:#eef1f6;
     --ink:#1f2937; --muted:#6b7280; --blue:#2563eb; --blue-dk:#1d4ed8;
-    --blue-soft:#e6f1fb; --radius:12px;
+    --blue-soft:#e6f1fb; --cyan:#06b6d4; --green:#16a34a; --radius:12px;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);
-    font-family:Segoe UI,Arial,sans-serif;padding:24px;}
+    font-family:Inter,Segoe UI,Arial,sans-serif;-webkit-font-smoothing:antialiased;padding:24px;}
   .wrap{max-width:1040px;margin:0 auto;}
   header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
   .mark{width:6px;height:34px;border-radius:3px;background:var(--blue);}
@@ -22,29 +25,42 @@
   .sub{font-size:13px;color:var(--muted);margin-top:2px;}
   .grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;}
   .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-    padding:18px 20px;}
+    padding:18px 20px;box-shadow:0 1px 2px rgba(16,24,40,.04);}
   .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap;}
   .phead h2{font-size:14px;font-weight:600;margin:0;}
   .count{font-size:12px;font-weight:500;color:var(--muted);
-    background:var(--line);border-radius:20px;padding:3px 10px;}
+    background:var(--line);border-radius:20px;padding:3px 10px;font-variant-numeric:tabular-nums;}
   .row{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
-  .pct{width:46px;font-size:13px;font-weight:500;color:var(--muted);text-align:right;}
+  .pct{width:46px;font-size:13px;font-weight:500;color:var(--muted);text-align:right;
+    font-variant-numeric:tabular-nums;}
   .row input{flex:1;height:38px;border:1px solid var(--border);border-radius:8px;
-    padding:0 12px;font-size:14px;color:var(--ink);background:#fbfcfe;}
+    padding:0 12px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);
+    background:#fbfcfe;transition:border-color .12s,box-shadow .12s,background .12s;}
+  .row input::placeholder{color:#b6bcc8;}
+  .row input:hover{border-color:#cfd6e2;}
   .row input:focus{outline:none;border-color:var(--blue);background:#fff;
     box-shadow:0 0 0 3px var(--blue-soft);}
   .row input.filled{background:#fff;border-color:#bcd3f2;}
   .actions{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
   button{font-family:inherit;font-size:14px;font-weight:500;height:38px;padding:0 16px;
-    border-radius:8px;cursor:pointer;border:1px solid transparent;}
+    border-radius:8px;cursor:pointer;border:1px solid transparent;
+    transition:background .12s,border-color .12s,opacity .12s;}
   .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .btn-primary:hover{background:var(--blue-dk);border-color:var(--blue-dk);}
   .btn-ghost{background:#fff;color:var(--ink);border-color:var(--border);}
+  .btn-ghost:hover{border-color:#cfd6e2;}
+  .btn-save{background:var(--green);color:#fff;border-color:var(--green);}
+  .btn-save:hover{background:#128a37;border-color:#128a37;}
   button:disabled{opacity:.45;cursor:not-allowed;}
   .canvas-box{position:relative;height:440px;}
   .empty{display:flex;align-items:center;justify-content:center;height:440px;text-align:center;
     color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:10px;
     background:#fbfcfe;padding:0 24px;}
   .hint{font-size:12px;color:var(--muted);margin-top:12px;min-height:16px;}
+  .savemsg{margin-top:12px;font-size:13px;border-radius:8px;padding:10px 14px;display:none;}
+  .savemsg.ok{color:#0f5132;background:#e7f6ec;border:1px solid #bfe6cd;display:block;}
+  .savemsg.err{color:#842029;background:#fbe7e9;border:1px solid #f2c2c7;display:block;}
+  .savemsg.busy{color:#0c447c;background:#e6f1fb;border:1px solid #bcd3f2;display:block;}
   @media(max-width:760px){.grid{grid-template-columns:1fr;} body{padding:16px;}}
 </style>
 </head>
@@ -64,16 +80,17 @@
         <h2>Power values</h2>
         <span class="count" id="count">0 / 10</span>
       </div>
-      <div class="row"><span class="pct">10%</span><input type="text" data-pct="10" placeholder="value"></div>
-      <div class="row"><span class="pct">20%</span><input type="text" data-pct="20" placeholder="value"></div>
-      <div class="row"><span class="pct">30%</span><input type="text" data-pct="30" placeholder="value"></div>
-      <div class="row"><span class="pct">40%</span><input type="text" data-pct="40" placeholder="value"></div>
-      <div class="row"><span class="pct">50%</span><input type="text" data-pct="50" placeholder="value"></div>
-      <div class="row"><span class="pct">60%</span><input type="text" data-pct="60" placeholder="value"></div>
-      <div class="row"><span class="pct">70%</span><input type="text" data-pct="70" placeholder="value"></div>
-      <div class="row"><span class="pct">80%</span><input type="text" data-pct="80" placeholder="value"></div>
-      <div class="row"><span class="pct">90%</span><input type="text" data-pct="90" placeholder="value"></div>
-      <div class="row" style="margin-bottom:0;"><span class="pct">100%</span><input type="text" data-pct="100" placeholder="value"></div>
+
+      <div class="row"><span class="pct">10%</span><input type="text" inputmode="decimal" data-pct="10" placeholder="value"></div>
+      <div class="row"><span class="pct">20%</span><input type="text" inputmode="decimal" data-pct="20" placeholder="value"></div>
+      <div class="row"><span class="pct">30%</span><input type="text" inputmode="decimal" data-pct="30" placeholder="value"></div>
+      <div class="row"><span class="pct">40%</span><input type="text" inputmode="decimal" data-pct="40" placeholder="value"></div>
+      <div class="row"><span class="pct">50%</span><input type="text" inputmode="decimal" data-pct="50" placeholder="value"></div>
+      <div class="row"><span class="pct">60%</span><input type="text" inputmode="decimal" data-pct="60" placeholder="value"></div>
+      <div class="row"><span class="pct">70%</span><input type="text" inputmode="decimal" data-pct="70" placeholder="value"></div>
+      <div class="row"><span class="pct">80%</span><input type="text" inputmode="decimal" data-pct="80" placeholder="value"></div>
+      <div class="row"><span class="pct">90%</span><input type="text" inputmode="decimal" data-pct="90" placeholder="value"></div>
+      <div class="row" style="margin-bottom:0;"><span class="pct">100%</span><input type="text" inputmode="decimal" data-pct="100" placeholder="value"></div>
     </div>
 
     <div class="panel">
@@ -81,9 +98,9 @@
         <h2>Graph</h2>
         <div class="actions" style="margin:0;">
           <button class="btn-ghost" id="clearBtn">Clear</button>
-          <button class="btn-ghost" id="dlBtn" disabled>PNG</button>
-          <button class="btn-ghost" id="pdfBtn" disabled>PDF</button>
+          <button class="btn-ghost" id="dlBtn" disabled>Download</button>
           <button class="btn-primary" id="genBtn">Generate graph</button>
+          <button class="btn-save" id="saveBtn" disabled>&#10003; Confirm &amp; Save to Record</button>
         </div>
       </div>
       <div class="canvas-box">
@@ -91,23 +108,44 @@
         <canvas id="chart" style="display:none;"></canvas>
       </div>
       <div class="hint" id="hint"></div>
+      <div class="savemsg" id="savemsg"></div>
     </div>
   </div>
 </div>
 
 <script>
-  var STEPS = [10,20,30,40,50,60,70,80,90,100];
-  var inputs = Array.prototype.slice.call(document.querySelectorAll('input[data-pct]'));
-  var params = new URLSearchParams(location.search);
-  var logId = params.get('logId') || '';
-  if (logId) document.getElementById('sub').textContent = 'Log: ' + logId;
+  const API_URL = "https://www.zohoapis.com/creator/custom/sarathynds_saryam/Save_Chart";
+  const PUBLIC_KEY = "pfXqpm8Kz9KnxZ47XKGGh8R2g";
 
-  var chart = null;
+  const STEPS = [10,20,30,40,50,60,70,80,90,100];
+  const inputs = Array.from(document.querySelectorAll('input[data-pct]'));
+  const params = new URLSearchParams(location.search);
+  const recId = params.get('recId') || '';
+  const logId = params.get('logId') || params.get('recordId') || recId || '';
+  if (logId) document.getElementById('sub').textContent = 'Record: ' + logId;
+
+  // auto-fill values from ?vals=10,20,...
+  const valsParam = params.get('vals');
+  if (valsParam){
+    const arr = valsParam.split(',');
+    arr.forEach((v,i)=>{ if(inputs[i] && v!=='') inputs[i].value = v; });
+  }
+
+  let chart = null;
+
+  function sanitize(el){
+    let v = el.value.replace(/[^0-9.\-]/g, '');
+    const neg = v.startsWith('-');
+    v = v.replace(/-/g, '');
+    const parts = v.split('.');
+    v = parts.shift() + (parts.length ? '.' + parts.join('') : '');
+    el.value = (neg ? '-' : '') + v;
+  }
 
   function updateCount(){
-    var filled = 0;
-    inputs.forEach(function(el){
-      var has = el.value.trim() !== '';
+    let filled = 0;
+    inputs.forEach(el => {
+      const has = el.value.trim() !== '';
       el.classList.toggle('filled', has);
       if (has) filled++;
     });
@@ -115,107 +153,143 @@
     return filled;
   }
 
-  inputs.forEach(function(el){
-    el.addEventListener('input', updateCount);
-    el.addEventListener('keydown', function(e){ if (e.key === 'Enter') generate(); });
+  inputs.forEach(el => {
+    el.addEventListener('input', () => { sanitize(el); updateCount(); });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
   });
 
-  var whiteBg = {
+  const whiteBg = {
     id:'whiteBg',
-    beforeDraw:function(c){ var x=c.ctx; x.save(); x.globalCompositeOperation='destination-over';
+    beforeDraw(c){ const x=c.ctx; x.save(); x.globalCompositeOperation='destination-over';
       x.fillStyle='#ffffff'; x.fillRect(0,0,c.width,c.height); x.restore(); }
   };
 
   function generate(){
-    var hint = document.getElementById('hint');
-    var vals = inputs.map(function(el){ return el.value.trim() === '' ? null : Number(el.value); });
-    var filled = vals.filter(function(v){ return v !== null; }).length;
+    const hint = document.getElementById('hint');
+    const vals = inputs.map(el => el.value.trim() === '' ? null : Number(el.value));
+    const filled = vals.filter(v => v !== null).length;
     if (filled === 0){ hint.textContent = 'Enter at least one value first.'; return; }
-    hint.textContent = filled < 10 ? (filled + ' of 10 values entered.') : '';
+    hint.textContent = filled < 10 ? (filled + ' of 10 values entered — graph drawn from filled points.') : '';
+    document.getElementById('savemsg').className = 'savemsg';
 
     document.getElementById('empty').style.display = 'none';
-    var cv = document.getElementById('chart');
+    const cv = document.getElementById('chart');
     cv.style.display = 'block';
 
-    if (chart) chart.destroy();
-    chart = new Chart(cv.getContext('2d'), {
+    const cfg = {
       type:'line',
-      data:{ labels: STEPS.map(function(p){ return p + '%'; }),
+      data:{ labels: STEPS.map(p => p + '%'),
         datasets:[{ label:'Power', data: vals, spanGaps:true,
           borderColor:'#2563eb', backgroundColor:'rgba(6,182,212,.12)',
           borderWidth:2, fill:true, tension:.3,
-          pointBackgroundColor:'#2563eb', pointRadius:4 }] },
+          pointBackgroundColor:'#2563eb', pointRadius:4, pointHoverRadius:6 }] },
       options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false} },
+        plugins:{ legend:{display:false},
+          title:{display:!!logId, text: logId ? ('Power Chart — ' + logId) : '',
+            color:'#1f2937', font:{family:'Inter',size:14,weight:'600'}} },
         scales:{
-          y:{ title:{display:true,text:'Power'}, beginAtZero:true },
-          x:{ title:{display:true,text:'Percentage'} } }
+          y:{title:{display:true,text:'Power',color:'#6b7280'}, grid:{color:'#eef1f6'}, ticks:{color:'#6b7280'}, beginAtZero:true},
+          x:{title:{display:true,text:'Percentage',color:'#6b7280'}, grid:{color:'#eef1f6'}, ticks:{color:'#6b7280'}} }
       },
       plugins:[whiteBg]
-    });
+    };
+    if (chart) chart.destroy();
+    chart = new Chart(cv.getContext('2d'), cfg);
     document.getElementById('dlBtn').disabled = false;
-    document.getElementById('pdfBtn').disabled = false;
+    document.getElementById('saveBtn').disabled = false;
+  }
+
+  function pngDataUrl(){ return chart.toBase64Image('image/png', 1); }
+
+  function pdfDataUrl(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    doc.setFont('helvetica','bold'); doc.setFontSize(14);
+    doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 42);
+    const img = chart.toBase64Image('image/png', 1);
+    const ratio = chart.height / chart.width;
+    const imgW = (W - 80) * 0.70, imgH = imgW * ratio;
+    doc.addImage(img, 'PNG', 40, 62, imgW, imgH);
+    let tx = 40 + imgW + 28, ty = 74;
+    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Values', tx, ty); ty += 18;
+    doc.setFont('helvetica','normal');
+    STEPS.forEach((p, i) => {
+      const v = inputs[i].value.trim() || '-';
+      doc.text(p + '%', tx, ty);
+      doc.text(String(v), tx + 64, ty);
+      ty += 17;
+    });
+    return doc.output('datauristring');
   }
 
   function download(){
     if (!chart) return;
-    var a = document.createElement('a');
-    a.href = chart.toBase64Image('image/png', 1);
-    a.download = 'PowerChart.png';
+    const a = document.createElement('a');
+    a.href = pngDataUrl();
+    a.download = 'PowerChart' + (logId ? '_' + logId : '') + '.png';
     a.click();
   }
 
-  function downloadPDF(){
-    if (!chart) return;
-    if (!window.jspdf){ document.getElementById('hint').textContent = 'PDF library did not load.'; return; }
-    var jsPDF = window.jspdf.jsPDF;
-    var doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
-    doc.setFont('helvetica','bold'); doc.setFontSize(14);
-    doc.text('Power Chart', 40, 42);
-    var img = chart.toBase64Image('image/png', 1);
-    var W = doc.internal.pageSize.getWidth();
-    var imgW = (W - 80) * 0.70, imgH = imgW * (chart.height / chart.width);
-    doc.addImage(img, 'PNG', 40, 62, imgW, imgH);
-    var tx = 40 + imgW + 28, ty = 74;
-    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Values', tx, ty); ty += 18;
-    doc.setFont('helvetica','normal');
-    STEPS.forEach(function(p, i){
-      doc.text(p + '%', tx, ty);
-      doc.text(String(inputs[i].value.trim() || '-'), tx + 64, ty);
-      ty += 17;
+  async function postToZoho(imgData, fileType){
+    const body = JSON.stringify({ recId: recId, imgData: imgData, fileType: fileType });
+    const url = API_URL + "?publickey=" + PUBLIC_KEY;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: body
     });
-    doc.save('PowerChart.pdf');
+    return res.text();
+  }
+
+  async function confirmSave(){
+    if (!chart) return;
+    const msg = document.getElementById('savemsg');
+
+    if (!recId){
+      msg.className = 'savemsg err';
+      msg.textContent = 'No record ID found. Open this chart from a saved Service record so it knows where to save.';
+      return;
+    }
+
+    msg.className = 'savemsg busy';
+    msg.textContent = 'Saving chart to the record…';
+    document.getElementById('saveBtn').disabled = true;
+
+    try{
+      const png = pngDataUrl();
+      await postToZoho(png, 'png');
+
+      const pdf = pdfDataUrl();
+      await postToZoho(pdf, 'pdf');
+
+      msg.className = 'savemsg ok';
+      msg.textContent = '\u2713 Saved to the record. You can close this tab and Submit the Service form.';
+    }catch(e){
+      msg.className = 'savemsg err';
+      msg.textContent = 'Could not save automatically. You can still use Download and upload the files manually.';
+    }
+    document.getElementById('saveBtn').disabled = false;
   }
 
   function clearAll(){
-    inputs.forEach(function(el){ el.value = ''; });
+    inputs.forEach(el => el.value = '');
     updateCount();
     if (chart){ chart.destroy(); chart = null; }
     document.getElementById('chart').style.display = 'none';
     document.getElementById('empty').style.display = 'flex';
     document.getElementById('dlBtn').disabled = true;
-    document.getElementById('pdfBtn').disabled = true;
+    document.getElementById('saveBtn').disabled = true;
     document.getElementById('hint').textContent = '';
+    document.getElementById('savemsg').className = 'savemsg';
   }
 
   document.getElementById('genBtn').addEventListener('click', generate);
   document.getElementById('dlBtn').addEventListener('click', download);
-  document.getElementById('pdfBtn').addEventListener('click', downloadPDF);
+  document.getElementById('saveBtn').addEventListener('click', confirmSave);
   document.getElementById('clearBtn').addEventListener('click', clearAll);
 
-  function autoLoad(){
-    var valsParam = params.get('vals');
-    if (!valsParam) return;
-    var arr = valsParam.split(',');
-    inputs.forEach(function(el, i){
-      if (arr[i] !== undefined && arr[i].trim() !== '') el.value = arr[i].trim();
-    });
-    updateCount();
-    generate();
-  }
-
-  if (document.readyState === 'complete') { autoLoad(); }
-  else { window.addEventListener('load', autoLoad); }
+  updateCount();
 </script>
 </body>
 </html>
