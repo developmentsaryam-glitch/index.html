@@ -198,11 +198,27 @@
     document.getElementById('saveBtn').disabled = false;
   }
 
-  // Return the chart as a REAL PNG file (Blob) — no base64 text.
-  function pngBlob(){
-    return new Promise(resolve => {
-      chart.canvas.toBlob(b => resolve(b), 'image/png', 1);
+  // Build the PDF and return it as a base64 data URL (reaches Flow reliably as form text).
+  function pdfDataUrl(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    doc.setFont('helvetica','bold'); doc.setFontSize(14);
+    doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 42);
+    const img = chart.toBase64Image('image/png', 1);
+    const ratio = chart.height / chart.width;
+    const imgW = (W - 80) * 0.70, imgH = imgW * ratio;
+    doc.addImage(img, 'PNG', 40, 62, imgW, imgH);
+    let tx = 40 + imgW + 28, ty = 74;
+    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Values', tx, ty); ty += 18;
+    doc.setFont('helvetica','normal');
+    STEPS.forEach((p, i) => {
+      const v = inputs[i].value.trim() || '-';
+      doc.text(p + '%', tx, ty);
+      doc.text(String(v), tx + 64, ty);
+      ty += 17;
     });
+    return doc.output('datauristring');   // data:application/pdf;base64,....
   }
 
   function download(){
@@ -213,16 +229,17 @@
     a.click();
   }
 
-  // Send the real PNG file to Flow as multipart/form-data (a genuine file upload).
-  async function postFileToZoho(fileBlob, fileType){
-    const form = new FormData();
+  // Send base64 PDF to Flow as form text (this format reaches Flow with no 404).
+  async function postToZoho(imgData, fileType){
+    const form = new URLSearchParams();
     form.append("recId", recId);
     form.append("fileType", fileType);
-    form.append("file", fileBlob, "PowerChart_" + recId + ".png");
+    form.append("imgData", imgData);
     await fetch(FLOW_URL, {
       method: "POST",
       mode: "no-cors",
-      body: form   // browser sets multipart/form-data automatically
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form.toString()
     });
     return "sent";
   }
@@ -238,15 +255,15 @@
     }
 
     msg.className = 'savemsg busy';
-    msg.textContent = 'Saving chart to the record…';
+    msg.textContent = 'Saving chart PDF to the record…';
     document.getElementById('saveBtn').disabled = true;
 
     try{
-      const blob = await pngBlob();
-      await postFileToZoho(blob, 'png');
+      const pdf = pdfDataUrl();
+      await postToZoho(pdf, 'pdf');
 
       msg.className = 'savemsg ok';
-      msg.textContent = '\u2713 Sent to the record. Open the Service record in a moment and check the Power Chart File field.';
+      msg.textContent = '\u2713 Sent to the record. Open the Service record in a moment and check the Power Chart file field.';
     }catch(e){
       msg.className = 'savemsg err';
       msg.textContent = 'Could not send. You can still use Download and upload the file manually.';
