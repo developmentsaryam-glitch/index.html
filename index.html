@@ -49,12 +49,18 @@
   .btn-primary:hover{background:var(--blue-dk);border-color:var(--blue-dk);}
   .btn-ghost{background:#fff;color:var(--ink);border-color:var(--border);}
   .btn-ghost:hover{border-color:#cfd6e2;}
+  .btn-save{background:var(--green);color:#fff;border-color:var(--green);}
+  .btn-save:hover{background:#128a37;border-color:#128a37;}
   button:disabled{opacity:.45;cursor:not-allowed;}
   .canvas-box{position:relative;height:440px;}
   .empty{display:flex;align-items:center;justify-content:center;height:440px;text-align:center;
     color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:10px;
     background:#fbfcfe;padding:0 24px;}
   .hint{font-size:12px;color:var(--muted);margin-top:12px;min-height:16px;}
+  .savemsg{margin-top:12px;font-size:13px;border-radius:8px;padding:10px 14px;display:none;}
+  .savemsg.ok{color:#0f5132;background:#e7f6ec;border:1px solid #bfe6cd;display:block;}
+  .savemsg.err{color:#842029;background:#fbe7e9;border:1px solid #f2c2c7;display:block;}
+  .savemsg.busy{color:#0c447c;background:#e6f1fb;border:1px solid #bcd3f2;display:block;}
   @media(max-width:760px){.grid{grid-template-columns:1fr;} body{padding:16px;}}
 </style>
 </head>
@@ -92,9 +98,9 @@
         <h2>Graph</h2>
         <div class="actions" style="margin:0;">
           <button class="btn-ghost" id="clearBtn">Clear</button>
-          <button class="btn-ghost" id="dlBtn" disabled>PNG</button>
-          <button class="btn-ghost" id="pdfBtn" disabled>PDF</button>
+          <button class="btn-ghost" id="dlBtn" disabled>Download</button>
           <button class="btn-primary" id="genBtn">Generate graph</button>
+          <button class="btn-save" id="saveBtn" disabled>&#10003; Confirm &amp; Save to Record</button>
         </div>
       </div>
       <div class="canvas-box">
@@ -102,16 +108,28 @@
         <canvas id="chart" style="display:none;"></canvas>
       </div>
       <div class="hint" id="hint"></div>
+      <div class="savemsg" id="savemsg"></div>
     </div>
   </div>
 </div>
 
 <script>
+  const API_URL = "https://www.zohoapis.com/creator/custom/sarathynds_saryam/Save_Chart";
+  const PUBLIC_KEY = "pfXqpm8Kz9KnxZ47XKGGh8R2g";
+
   const STEPS = [10,20,30,40,50,60,70,80,90,100];
   const inputs = Array.from(document.querySelectorAll('input[data-pct]'));
   const params = new URLSearchParams(location.search);
-  const logId = params.get('logId') || params.get('recordId') || '';
-  if (logId) document.getElementById('sub').textContent = 'Log: ' + logId;
+  const recId = params.get('recId') || '';
+  const logId = params.get('logId') || params.get('recordId') || recId || '';
+  if (logId) document.getElementById('sub').textContent = 'Record: ' + logId;
+
+  // auto-fill values from ?vals=10,20,...
+  const valsParam = params.get('vals');
+  if (valsParam){
+    const arr = valsParam.split(',');
+    arr.forEach((v,i)=>{ if(inputs[i] && v!=='') inputs[i].value = v; });
+  }
 
   let chart = null;
 
@@ -152,6 +170,7 @@
     const filled = vals.filter(v => v !== null).length;
     if (filled === 0){ hint.textContent = 'Enter at least one value first.'; return; }
     hint.textContent = filled < 10 ? (filled + ' of 10 values entered — graph drawn from filled points.') : '';
+    document.getElementById('savemsg').className = 'savemsg';
 
     document.getElementById('empty').style.display = 'none';
     const cv = document.getElementById('chart');
@@ -177,20 +196,12 @@
     if (chart) chart.destroy();
     chart = new Chart(cv.getContext('2d'), cfg);
     document.getElementById('dlBtn').disabled = false;
-    document.getElementById('pdfBtn').disabled = false;
+    document.getElementById('saveBtn').disabled = false;
   }
 
-  function download(){
-    if (!chart) return;
-    const a = document.createElement('a');
-    a.href = chart.toBase64Image('image/png', 1);
-    a.download = 'PowerChart' + (logId ? '_' + logId : '') + '.png';
-    a.click();
-  }
+  function pngDataUrl(){ return chart.toBase64Image('image/png', 1); }
 
-  function downloadPDF(){
-    if (!chart) return;
-    if (!window.jspdf){ document.getElementById('hint').textContent = 'PDF library did not load.'; return; }
+  function pdfDataUrl(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
     const W = doc.internal.pageSize.getWidth();
@@ -209,7 +220,56 @@
       doc.text(String(v), tx + 64, ty);
       ty += 17;
     });
-    doc.save('PowerChart' + (logId ? '_' + logId : '') + '.pdf');
+    return doc.output('datauristring');
+  }
+
+  function download(){
+    if (!chart) return;
+    const a = document.createElement('a');
+    a.href = pngDataUrl();
+    a.download = 'PowerChart' + (logId ? '_' + logId : '') + '.png';
+    a.click();
+  }
+
+  async function postToZoho(imgData, fileType){
+    const body = JSON.stringify({ recId: recId, imgData: imgData, fileType: fileType });
+    const url = API_URL + "?publickey=" + PUBLIC_KEY;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: body
+    });
+    return res.text();
+  }
+
+  async function confirmSave(){
+    if (!chart) return;
+    const msg = document.getElementById('savemsg');
+
+    if (!recId){
+      msg.className = 'savemsg err';
+      msg.textContent = 'No record ID found. Open this chart from a saved Service record so it knows where to save.';
+      return;
+    }
+
+    msg.className = 'savemsg busy';
+    msg.textContent = 'Saving chart to the record…';
+    document.getElementById('saveBtn').disabled = true;
+
+    try{
+      const png = pngDataUrl();
+      await postToZoho(png, 'png');
+
+      const pdf = pdfDataUrl();
+      await postToZoho(pdf, 'pdf');
+
+      msg.className = 'savemsg ok';
+      msg.textContent = '\u2713 Saved to the record. You can close this tab and Submit the Service form.';
+    }catch(e){
+      msg.className = 'savemsg err';
+      msg.textContent = 'Could not save automatically. You can still use Download and upload the files manually.';
+    }
+    document.getElementById('saveBtn').disabled = false;
   }
 
   function clearAll(){
@@ -219,14 +279,17 @@
     document.getElementById('chart').style.display = 'none';
     document.getElementById('empty').style.display = 'flex';
     document.getElementById('dlBtn').disabled = true;
-    document.getElementById('pdfBtn').disabled = true;
+    document.getElementById('saveBtn').disabled = true;
     document.getElementById('hint').textContent = '';
+    document.getElementById('savemsg').className = 'savemsg';
   }
 
   document.getElementById('genBtn').addEventListener('click', generate);
   document.getElementById('dlBtn').addEventListener('click', download);
-  document.getElementById('pdfBtn').addEventListener('click', downloadPDF);
+  document.getElementById('saveBtn').addEventListener('click', confirmSave);
   document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+  updateCount();
 </script>
 </body>
 </html>
