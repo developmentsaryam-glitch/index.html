@@ -234,12 +234,13 @@
   async function postToZoho(imgData, fileType){
     const body = JSON.stringify({ recId: recId, imgData: imgData, fileType: fileType });
     const url = API_URL + "?publickey=" + PUBLIC_KEY;
-    const res = await fetch(url, {
+    await fetch(url, {
       method: "POST",
+      mode: "no-cors",
       headers: { "Content-Type": "text/plain" },
       body: body
     });
-    return res.text();
+    return "sent";
   }
 
   async function confirmSave(){
@@ -260,14 +261,16 @@
       const png = pngDataUrl();
       await postToZoho(png, 'png');
 
+      await new Promise(r => setTimeout(r, 400));
+
       const pdf = pdfDataUrl();
       await postToZoho(pdf, 'pdf');
 
       msg.className = 'savemsg ok';
-      msg.textContent = '\u2713 Saved to the record. You can close this tab and Submit the Service form.';
+      msg.textContent = '\u2713 Sent to the record. Please open the Service record and check the Power Chart Image and File fields. If they are empty, use Download and upload manually.';
     }catch(e){
       msg.className = 'savemsg err';
-      msg.textContent = 'Could not save automatically. You can still use Download and upload the files manually.';
+      msg.textContent = 'Could not send. You can still use Download and upload the files manually.';
     }
     document.getElementById('saveBtn').disabled = false;
   }
