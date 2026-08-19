@@ -114,8 +114,7 @@
 </div>
 
 <script>
-  const API_URL = "https://www.zohoapis.com/creator/custom/sarathynds_saryam/Save_Chart";
-  const PUBLIC_KEY = "pfXqpm8Kz9KnxZ47XKGGh8R2g";
+  const FLOW_URL = "https://flow.zoho.com/896521609/flow/webhook/incoming?zapikey=1001.7d266c9bcbac67cfaaefc10acb747cc7.1f5f898a292dadc78e79d5fe2e459b75&isdebug=false";
 
   const STEPS = [10,20,30,40,50,60,70,80,90,100];
   const inputs = Array.from(document.querySelectorAll('input[data-pct]'));
@@ -233,13 +232,13 @@
 
   async function postToZoho(imgData, fileType){
     const body = JSON.stringify({ recId: recId, imgData: imgData, fileType: fileType });
-    const url = API_URL + "?publickey=" + PUBLIC_KEY;
-    const res = await fetch(url, {
+    await fetch(FLOW_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
       body: body
     });
-    return res.text();
+    return "sent";
   }
 
   async function confirmSave(){
@@ -265,13 +264,8 @@
       const pdf = pdfDataUrl();
       const r2 = await postToZoho(pdf, 'pdf');
 
-      if((r1 + r2).indexOf('success') > -1 || (r1 + r2).indexOf('3000') > -1){
-        msg.className = 'savemsg ok';
-        msg.textContent = '\u2713 Saved to the record. You can close this tab and Submit the Service form.';
-      } else {
-        msg.className = 'savemsg err';
-        msg.textContent = 'Server replied: ' + (r1 + ' | ' + r2) + '  — if not saved, use Download and upload manually.';
-      }
+      msg.className = 'savemsg ok';
+      msg.textContent = '\u2713 Sent to the record. Open the Service record in a moment and check the Power Chart Image and File fields.';
     }catch(e){
       msg.className = 'savemsg err';
       msg.textContent = 'Could not send. You can still use Download and upload the files manually.';
