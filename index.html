@@ -198,48 +198,31 @@
     document.getElementById('saveBtn').disabled = false;
   }
 
-  function pngDataUrl(){ return chart.toBase64Image('image/png', 1); }
-
-  function pdfDataUrl(){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
-    const W = doc.internal.pageSize.getWidth();
-    doc.setFont('helvetica','bold'); doc.setFontSize(14);
-    doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 42);
-    const img = chart.toBase64Image('image/png', 1);
-    const ratio = chart.height / chart.width;
-    const imgW = (W - 80) * 0.70, imgH = imgW * ratio;
-    doc.addImage(img, 'PNG', 40, 62, imgW, imgH);
-    let tx = 40 + imgW + 28, ty = 74;
-    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Values', tx, ty); ty += 18;
-    doc.setFont('helvetica','normal');
-    STEPS.forEach((p, i) => {
-      const v = inputs[i].value.trim() || '-';
-      doc.text(p + '%', tx, ty);
-      doc.text(String(v), tx + 64, ty);
-      ty += 17;
+  // Return the chart as a REAL PNG file (Blob) — no base64 text.
+  function pngBlob(){
+    return new Promise(resolve => {
+      chart.canvas.toBlob(b => resolve(b), 'image/png', 1);
     });
-    return doc.output('datauristring');
   }
 
   function download(){
     if (!chart) return;
     const a = document.createElement('a');
-    a.href = pngDataUrl();
+    a.href = chart.toBase64Image('image/png', 1);
     a.download = 'PowerChart' + (logId ? '_' + logId : '') + '.png';
     a.click();
   }
 
-  async function postToZoho(imgData, fileType){
-    const form = new URLSearchParams();
+  // Send the real PNG file to Flow as multipart/form-data (a genuine file upload).
+  async function postFileToZoho(fileBlob, fileType){
+    const form = new FormData();
     form.append("recId", recId);
     form.append("fileType", fileType);
-    form.append("imgData", imgData);
+    form.append("file", fileBlob, "PowerChart_" + recId + ".png");
     await fetch(FLOW_URL, {
       method: "POST",
       mode: "no-cors",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: form.toString()
+      body: form   // browser sets multipart/form-data automatically
     });
     return "sent";
   }
@@ -259,19 +242,14 @@
     document.getElementById('saveBtn').disabled = true;
 
     try{
-      const png = pngDataUrl();
-      const r1 = await postToZoho(png, 'png');
-
-      await new Promise(r => setTimeout(r, 400));
-
-      const pdf = pdfDataUrl();
-      const r2 = await postToZoho(pdf, 'pdf');
+      const blob = await pngBlob();
+      await postFileToZoho(blob, 'png');
 
       msg.className = 'savemsg ok';
-      msg.textContent = '\u2713 Sent to the record. Open the Service record in a moment and check the Power Chart Image and File fields.';
+      msg.textContent = '\u2713 Sent to the record. Open the Service record in a moment and check the Power Chart File field.';
     }catch(e){
       msg.className = 'savemsg err';
-      msg.textContent = 'Could not send. You can still use Download and upload the files manually.';
+      msg.textContent = 'Could not send. You can still use Download and upload the file manually.';
     }
     document.getElementById('saveBtn').disabled = false;
   }
