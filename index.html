@@ -234,13 +234,12 @@
   async function postToZoho(imgData, fileType){
     const body = JSON.stringify({ recId: recId, imgData: imgData, fileType: fileType });
     const url = API_URL + "?publickey=" + PUBLIC_KEY;
-    await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain" },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body
     });
-    return "sent";
+    return res.text();
   }
 
   async function confirmSave(){
@@ -259,15 +258,20 @@
 
     try{
       const png = pngDataUrl();
-      await postToZoho(png, 'png');
+      const r1 = await postToZoho(png, 'png');
 
       await new Promise(r => setTimeout(r, 400));
 
       const pdf = pdfDataUrl();
-      await postToZoho(pdf, 'pdf');
+      const r2 = await postToZoho(pdf, 'pdf');
 
-      msg.className = 'savemsg ok';
-      msg.textContent = '\u2713 Sent to the record. Please open the Service record and check the Power Chart Image and File fields. If they are empty, use Download and upload manually.';
+      if((r1 + r2).indexOf('success') > -1 || (r1 + r2).indexOf('3000') > -1){
+        msg.className = 'savemsg ok';
+        msg.textContent = '\u2713 Saved to the record. You can close this tab and Submit the Service form.';
+      } else {
+        msg.className = 'savemsg err';
+        msg.textContent = 'Server replied: ' + (r1 + ' | ' + r2) + '  — if not saved, use Download and upload manually.';
+      }
     }catch(e){
       msg.className = 'savemsg err';
       msg.textContent = 'Could not send. You can still use Download and upload the files manually.';
