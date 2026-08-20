@@ -53,6 +53,8 @@
   .btn-save{background:var(--green);color:#fff;border-color:var(--green);}
   .btn-save:hover{background:#128a37;border-color:#128a37;}
   button:disabled{opacity:.45;cursor:not-allowed;}
+  .backlink{display:none;margin-top:6px;font-size:13px;color:#2563eb;text-decoration:none;font-weight:600;}
+  .backlink:hover{text-decoration:underline;}
   .savemsg{margin-top:12px;font-size:13px;border-radius:8px;padding:10px 14px;display:none;}
   .savemsg.ok{color:#0f5132;background:#e7f6ec;border:1px solid #bfe6cd;display:block;}
   .savemsg.err{color:#842029;background:#fbe7e9;border:1px solid #f2c2c7;display:block;}
@@ -71,6 +73,7 @@
     <div class="mark"></div>
     <div>
       <h1>Power Chart</h1>
+      <a id="backBtn" href="#" class="backlink">&larr; Back to record</a>
       <div class="sub" id="sub">Enter a power value for each percentage step, then generate the graph.</div>
     </div>
   </header>
@@ -121,13 +124,12 @@
   const inputs = Array.from(document.querySelectorAll('input[data-pct]'));
   const params = new URLSearchParams(location.search);
   const recId = params.get('recId') || '';
-  console.log("POWER CHART recId =", recId);
-console.log("POWER CHART URL =", window.location.href);
   const logId = params.get('logId') || params.get('recordId') || recId || '';
   if (logId) document.getElementById('sub').textContent = 'Record: ' + logId;
 
   const valsParam = params.get('vals');
-  const reportParam = params.get('report') || 'Service_Report';   // which form's report to save into
+  const reportParam = params.get('report') || 'Service_Report';   // which form's report
+  const backUrl = "https://creatorapp.zoho.com/sarathynds_saryam/jenoptik-logs/record-summary/" + reportParam + "/" + recId;
   if (valsParam){
     const arr = valsParam.split(',');
     arr.forEach((v,i)=>{ if(inputs[i] && v!=='') inputs[i].value = v; });
@@ -319,6 +321,12 @@ console.log("POWER CHART URL =", window.location.href);
   wire('clearBtn', clearAll);
 
   updateCount();
+
+  // Show the Back button when opened from a record — goes to that record in its report (any form).
+  if (recId){
+    const bb = document.getElementById('backBtn');
+    if (bb){ bb.href = backUrl; bb.style.display = 'inline-block'; }
+  }
 
   if (viewMode){
     document.getElementById('sub').textContent = logId ? ('Record: ' + logId) : 'Power Chart';
