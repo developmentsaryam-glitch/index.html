@@ -198,17 +198,18 @@
     document.getElementById('saveBtn').disabled = false;
   }
 
-  // Build the PDF and return it as a base64 data URL (reaches Flow reliably as form text).
+  // Build a COMPACT PDF (compressed image) so the base64 stays small enough for the webhook.
   function pdfDataUrl(){
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
+    const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4', compress:true });
     const W = doc.internal.pageSize.getWidth();
     doc.setFont('helvetica','bold'); doc.setFontSize(14);
     doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 42);
-    const img = chart.toBase64Image('image/png', 1);
+    // JPEG at reduced quality is far smaller than full PNG
+    const img = chart.toBase64Image('image/jpeg', 0.7);
     const ratio = chart.height / chart.width;
-    const imgW = (W - 80) * 0.70, imgH = imgW * ratio;
-    doc.addImage(img, 'PNG', 40, 62, imgW, imgH);
+    const imgW = (W - 80) * 0.62, imgH = imgW * ratio;
+    doc.addImage(img, 'JPEG', 40, 62, imgW, imgH, undefined, 'FAST');
     let tx = 40 + imgW + 28, ty = 74;
     doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Values', tx, ty); ty += 18;
     doc.setFont('helvetica','normal');
