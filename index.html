@@ -121,6 +121,8 @@
   const inputs = Array.from(document.querySelectorAll('input[data-pct]'));
   const params = new URLSearchParams(location.search);
   const recId = params.get('recId') || '';
+  console.log("POWER CHART recId =", recId);
+console.log("POWER CHART URL =", window.location.href);
   const logId = params.get('logId') || params.get('recordId') || recId || '';
   if (logId) document.getElementById('sub').textContent = 'Record: ' + logId;
 
