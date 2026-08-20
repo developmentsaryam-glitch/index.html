@@ -73,7 +73,7 @@
     <div class="mark"></div>
     <div>
       <h1>Power Chart</h1>
-      <a id="backBtn" href="#" class="backlink">&larr; Back to record</a>
+      <a id="backBtn" href="#" class="backlink">&larr; Back to report</a>
       <div class="sub" id="sub">Enter a power value for each percentage step, then generate the graph.</div>
     </div>
   </header>
@@ -129,7 +129,7 @@
 
   const valsParam = params.get('vals');
   const reportParam = params.get('report') || 'Service_Report';   // which form's report
-  const backUrl = "https://creatorapp.zoho.com/sarathynds_saryam/jenoptik-logs/record-summary/" + reportParam + "/" + recId;
+  const backUrl = "https://creatorapp.zoho.com/sarathynds_saryam/jenoptik-logs#Report:" + reportParam;
   if (valsParam){
     const arr = valsParam.split(',');
     arr.forEach((v,i)=>{ if(inputs[i] && v!=='') inputs[i].value = v; });
@@ -322,7 +322,7 @@
 
   updateCount();
 
-  // Show the Back button when opened from a record — goes to that record in its report (any form).
+  // Show the Back button when opened from a record — goes to that form's report (any form).
   if (recId){
     const bb = document.getElementById('backBtn');
     if (bb){ bb.href = backUrl; bb.style.display = 'inline-block'; }
