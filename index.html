@@ -272,7 +272,48 @@
     }catch(e){ alert('Could not capture the chart image. Try Generate again.'); }
   }
 
-  // Confirm & Save: builds the PDF and sends it to Zoho Flow (auto-save).
+  // ---- AUTO-SAVE: design and transport kept separate ----
+
+  // createAutoSavePDF(): ONLY builds the PDF (its own layout). Returns base64 data URL.
+  // Built exactly like the working Download (no compress / no FAST) so it is never blank.
+  async function createAutoSavePDF(){
+    const img = await captureChartPNG();
+    const jsPDFClass = window.jspdf && window.jspdf.jsPDF;
+    const doc = new jsPDFClass({ orientation:'landscape', unit:'pt', format:'a4' });
+
+    // Title
+    doc.setFont('helvetica','bold'); doc.setFontSize(16);
+    doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 40);
+
+    // Chart
+    doc.addImage(img, 'PNG', 40, 65, 500, 280);
+
+    // Values table
+    let tx = 570, ty = 90;
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text('Values', tx, ty); ty += 22;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    STEPS.forEach((p,i)=>{ const v=inputs[i].value.trim()||'-'; doc.text(p+'%',tx,ty); doc.text(String(v),tx+70,ty); ty+=18; });
+
+    // Footer
+    const today = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+    doc.setFontSize(9); doc.setTextColor(120);
+    doc.text((logId ? 'Record: ' + logId + '     ' : '') + 'Generated: ' + today, 40, 560);
+    doc.setTextColor(0);
+
+    return doc.output('datauristring');
+  }
+
+  // saveToFlow(): ONLY sends already-built data to Flow. No PDF logic here.
+  async function saveToFlow(pdfData){
+    const form = new URLSearchParams();
+    form.append('recId', recId);
+    form.append('fileType', 'pdf');
+    form.append('imgData', pdfData);
+    await fetch(FLOW_URL, { method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: form.toString() });
+  }
+
+  // autoSave(): orchestrates — build the PDF, then send it. Triggered by Confirm & Save.
   async function confirmSave(){
     if (!chart){ return; }
     const msg = document.getElementById('savemsg');
@@ -286,26 +327,8 @@
     msg.textContent = 'Saving chart to the record…';
     if (btn) btn.disabled = true;
     try{
-      const img = await captureChartPNG();
-      // Build compact PDF and send as base64 to Flow.
-      const jsPDFClass = window.jspdf && window.jspdf.jsPDF;
-      const doc = new jsPDFClass({ orientation:'landscape', unit:'pt', format:'a4', compress:true });
-      doc.setFont('helvetica','bold'); doc.setFontSize(16);
-      doc.text('Power Chart' + (logId ? ' - ' + logId : ''), 40, 40);
-      doc.addImage(img, 'PNG', 40, 65, 500, 280, undefined, 'FAST');
-      let tx = 570, ty = 90;
-      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text('Values', tx, ty); ty += 22;
-      doc.setFont('helvetica','normal'); doc.setFontSize(10);
-      STEPS.forEach((p,i)=>{ const v=inputs[i].value.trim()||'-'; doc.text(p+'%',tx,ty); doc.text(String(v),tx+70,ty); ty+=18; });
-      const pdfData = doc.output('datauristring');
-
-      const form = new URLSearchParams();
-      form.append('recId', recId);
-      form.append('fileType', 'pdf');
-      form.append('imgData', pdfData);
-      await fetch(FLOW_URL, { method:'POST', mode:'no-cors',
-        headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: form.toString() });
-
+      const pdfData = await createAutoSavePDF();   // design
+      await saveToFlow(pdfData);                    // transport
       msg.className = 'savemsg ok';
       msg.textContent = '\u2713 Sent to the record. Give it a moment, then check the record.';
     }catch(e){
