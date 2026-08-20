@@ -124,15 +124,12 @@
   const logId = params.get('logId') || params.get('recordId') || recId || '';
   if (logId) document.getElementById('sub').textContent = 'Record: ' + logId;
 
-  // Values from ?vals=10,20,...
   const valsParam = params.get('vals');
   if (valsParam){
     const arr = valsParam.split(',');
     arr.forEach((v,i)=>{ if(inputs[i] && v!=='') inputs[i].value = v; });
   }
 
-  // VIEW MODE = opened from the saved report link (has &view=1). Show only the graph.
-  // Submit-time (no view flag) shows the full page with Generate/Download.
   const viewMode = params.get('view') === '1';
 
   let chart = null;
@@ -204,7 +201,6 @@
     ['dlBtn','dlPngBtn','saveBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
   }
 
-  // Capture the chart as a PNG. Force a render, then wait for paint (prevents blank PDF).
   function captureChartPNG(){
     return new Promise((resolve, reject) => {
       if (!chart){ reject(new Error('no chart')); return; }
@@ -231,15 +227,9 @@
       const jsPDFClass = window.jspdf && window.jspdf.jsPDF;
       if (!jsPDFClass){ throw new Error('jsPDF not loaded'); }
       const doc = new jsPDFClass({ orientation:'landscape', unit:'pt', format:'a4' });
-
-      // Title
       doc.setFont('helvetica','bold'); doc.setFontSize(16);
       doc.text('Power Chart' + (logId ? ' - ' + logId : ''), 40, 40);
-
-      // Chart image (fixed dimensions — reliable)
       doc.addImage(img, 'PNG', 40, 65, 500, 280);
-
-      // Values table
       let tx = 570, ty = 90;
       doc.setFont('helvetica','bold'); doc.setFontSize(12);
       doc.text('Values', tx, ty); ty += 22;
@@ -250,7 +240,6 @@
         doc.text(String(v), tx + 70, ty);
         ty += 18;
       });
-
       doc.save('PowerChart' + (logId ? '_' + logId : '') + '.pdf');
     }catch(e){
       console.error('PDF ERROR:', e);
@@ -260,7 +249,6 @@
     }
   }
 
-  // Download the chart as a real PNG image.
   async function downloadPNG(){
     if (!chart){ alert('Please generate the graph first.'); return; }
     try{
@@ -272,38 +260,26 @@
     }catch(e){ alert('Could not capture the chart image. Try Generate again.'); }
   }
 
-  // ---- AUTO-SAVE: design and transport kept separate ----
-
-  // createAutoSavePDF(): ONLY builds the PDF (its own layout). Returns base64 data URL.
-  // Built exactly like the working Download (no compress / no FAST) so it is never blank.
   async function createAutoSavePDF(){
-    const img = await captureChartPNG();
+    await captureChartPNG();
+    const cv = document.getElementById('chart');
+    const imgJpeg = cv.toDataURL('image/jpeg', 0.7);
     const jsPDFClass = window.jspdf && window.jspdf.jsPDF;
     const doc = new jsPDFClass({ orientation:'landscape', unit:'pt', format:'a4' });
-
-    // Title
     doc.setFont('helvetica','bold'); doc.setFontSize(16);
     doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 40);
-
-    // Chart
-    doc.addImage(img, 'PNG', 40, 65, 500, 280);
-
-    // Values table
+    doc.addImage(imgJpeg, 'JPEG', 40, 65, 500, 280);
     let tx = 570, ty = 90;
     doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text('Values', tx, ty); ty += 22;
     doc.setFont('helvetica','normal'); doc.setFontSize(10);
     STEPS.forEach((p,i)=>{ const v=inputs[i].value.trim()||'-'; doc.text(p+'%',tx,ty); doc.text(String(v),tx+70,ty); ty+=18; });
-
-    // Footer
     const today = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
     doc.setFontSize(9); doc.setTextColor(120);
     doc.text((logId ? 'Record: ' + logId + '     ' : '') + 'Generated: ' + today, 40, 560);
     doc.setTextColor(0);
-
     return doc.output('datauristring');
   }
 
-  // saveToFlow(): ONLY sends already-built data to Flow. No PDF logic here.
   async function saveToFlow(pdfData){
     const form = new URLSearchParams();
     form.append('recId', recId);
@@ -313,7 +289,6 @@
       headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: form.toString() });
   }
 
-  // autoSave(): orchestrates — build the PDF, then send it. Triggered by Confirm & Save.
   async function confirmSave(){
     if (!chart){ return; }
     const msg = document.getElementById('savemsg');
@@ -327,8 +302,8 @@
     msg.textContent = 'Saving chart to the record…';
     if (btn) btn.disabled = true;
     try{
-      const pdfData = await createAutoSavePDF();   // design
-      await saveToFlow(pdfData);                    // transport
+      const pdfData = await createAutoSavePDF();
+      await saveToFlow(pdfData);
       msg.className = 'savemsg ok';
       msg.textContent = '\u2713 Sent to the record. Give it a moment, then check the record.';
     }catch(e){
@@ -349,7 +324,6 @@
     const msg = document.getElementById('savemsg'); if (msg){ msg.className = 'savemsg'; msg.textContent = ''; }
   }
 
-  // Wire buttons
   const wire = (id, fn) => { const b = document.getElementById(id); if (b) b.addEventListener('click', fn); };
   wire('genBtn', generate);
   wire('dlBtn', downloadPDF);
@@ -359,7 +333,6 @@
 
   updateCount();
 
-  // If opened from the report link (view mode): show ONLY the graph — hide every control.
   if (viewMode){
     document.getElementById('sub').textContent = logId ? ('Record: ' + logId) : 'Power Chart';
     const ip = document.getElementById('inputPanel');
@@ -370,7 +343,6 @@
     });
   }
 
-  // Whenever values are present in the URL (submit-time OR report link), draw the chart on load.
   if (valsParam){
     window.addEventListener('load', () => { generate(); });
   }
