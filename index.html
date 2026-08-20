@@ -24,6 +24,7 @@
   h1{font-size:20px;font-weight:600;margin:0;line-height:1.15;}
   .sub{font-size:13px;color:var(--muted);margin-top:2px;}
   .grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;}
+  .grid.viewonly{grid-template-columns:1fr;}
   .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
     padding:18px 20px;box-shadow:0 1px 2px rgba(16,24,40,.04);}
   .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap;}
@@ -49,18 +50,12 @@
   .btn-primary:hover{background:var(--blue-dk);border-color:var(--blue-dk);}
   .btn-ghost{background:#fff;color:var(--ink);border-color:var(--border);}
   .btn-ghost:hover{border-color:#cfd6e2;}
-  .btn-save{background:var(--green);color:#fff;border-color:var(--green);}
-  .btn-save:hover{background:#128a37;border-color:#128a37;}
   button:disabled{opacity:.45;cursor:not-allowed;}
   .canvas-box{position:relative;height:440px;}
   .empty{display:flex;align-items:center;justify-content:center;height:440px;text-align:center;
     color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:10px;
     background:#fbfcfe;padding:0 24px;}
   .hint{font-size:12px;color:var(--muted);margin-top:12px;min-height:16px;}
-  .savemsg{margin-top:12px;font-size:13px;border-radius:8px;padding:10px 14px;display:none;}
-  .savemsg.ok{color:#0f5132;background:#e7f6ec;border:1px solid #bfe6cd;display:block;}
-  .savemsg.err{color:#842029;background:#fbe7e9;border:1px solid #f2c2c7;display:block;}
-  .savemsg.busy{color:#0c447c;background:#e6f1fb;border:1px solid #bcd3f2;display:block;}
   @media(max-width:760px){.grid{grid-template-columns:1fr;} body{padding:16px;}}
 </style>
 </head>
@@ -74,8 +69,8 @@
     </div>
   </header>
 
-  <div class="grid">
-    <div class="panel">
+  <div class="grid" id="grid">
+    <div class="panel" id="inputPanel">
       <div class="phead">
         <h2>Power values</h2>
         <span class="count" id="count">0 / 10</span>
@@ -98,9 +93,8 @@
         <h2>Graph</h2>
         <div class="actions" style="margin:0;">
           <button class="btn-ghost" id="clearBtn">Clear</button>
-          <button class="btn-ghost" id="dlBtn" disabled>Download</button>
+          <button class="btn-ghost" id="dlBtn" disabled>Download PDF</button>
           <button class="btn-primary" id="genBtn">Generate graph</button>
-          <button class="btn-save" id="saveBtn" disabled>&#10003; Confirm &amp; Save to Record</button>
         </div>
       </div>
       <div class="canvas-box">
@@ -108,14 +102,11 @@
         <canvas id="chart" style="display:none;"></canvas>
       </div>
       <div class="hint" id="hint"></div>
-      <div class="savemsg" id="savemsg"></div>
     </div>
   </div>
 </div>
 
 <script>
-  const FLOW_URL = "https://flow.zoho.com/896521609/flow/webhook/incoming?zapikey=1001.7d266c9bcbac67cfaaefc10acb747cc7.1f5f898a292dadc78e79d5fe2e459b75&isdebug=false";
-
   const STEPS = [10,20,30,40,50,60,70,80,90,100];
   const inputs = Array.from(document.querySelectorAll('input[data-pct]'));
   const params = new URLSearchParams(location.search);
@@ -123,12 +114,15 @@
   const logId = params.get('logId') || params.get('recordId') || recId || '';
   if (logId) document.getElementById('sub').textContent = 'Record: ' + logId;
 
-  // auto-fill values from ?vals=10,20,...
+  // Values from ?vals=10,20,...
   const valsParam = params.get('vals');
   if (valsParam){
     const arr = valsParam.split(',');
     arr.forEach((v,i)=>{ if(inputs[i] && v!=='') inputs[i].value = v; });
   }
+
+  // VIEW MODE: opened from the saved link (has vals). Show only the graph + Download.
+  const viewMode = !!valsParam;
 
   let chart = null;
 
@@ -148,7 +142,8 @@
       el.classList.toggle('filled', has);
       if (has) filled++;
     });
-    document.getElementById('count').textContent = filled + ' / 10';
+    const c = document.getElementById('count');
+    if (c) c.textContent = filled + ' / 10';
     return filled;
   }
 
@@ -167,9 +162,8 @@
     const hint = document.getElementById('hint');
     const vals = inputs.map(el => el.value.trim() === '' ? null : Number(el.value));
     const filled = vals.filter(v => v !== null).length;
-    if (filled === 0){ hint.textContent = 'Enter at least one value first.'; return; }
-    hint.textContent = filled < 10 ? (filled + ' of 10 values entered — graph drawn from filled points.') : '';
-    document.getElementById('savemsg').className = 'savemsg';
+    if (filled === 0){ if(hint) hint.textContent = 'Enter at least one value first.'; return; }
+    if (hint) hint.textContent = filled < 10 ? (filled + ' of 10 values entered — graph drawn from filled points.') : '';
 
     document.getElementById('empty').style.display = 'none';
     const cv = document.getElementById('chart');
@@ -182,7 +176,7 @@
           borderColor:'#2563eb', backgroundColor:'rgba(6,182,212,.12)',
           borderWidth:2, fill:true, tension:.3,
           pointBackgroundColor:'#2563eb', pointRadius:4, pointHoverRadius:6 }] },
-      options:{ responsive:true, maintainAspectRatio:false,
+      options:{ responsive:true, maintainAspectRatio:false, animation:false,
         plugins:{ legend:{display:false},
           title:{display:!!logId, text: logId ? ('Power Chart — ' + logId) : '',
             color:'#1f2937', font:{family:'Inter',size:14,weight:'600'}} },
@@ -194,82 +188,66 @@
     };
     if (chart) chart.destroy();
     chart = new Chart(cv.getContext('2d'), cfg);
-    document.getElementById('dlBtn').disabled = false;
-    document.getElementById('saveBtn').disabled = false;
+    chart.resize();
+    chart.update('none');
+    const dl = document.getElementById('dlBtn');
+    if (dl) dl.disabled = false;
   }
 
-  // Build a COMPACT PDF (compressed image) so the base64 stays small enough for the webhook.
-  function pdfDataUrl(){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4', compress:true });
-    const W = doc.internal.pageSize.getWidth();
-    doc.setFont('helvetica','bold'); doc.setFontSize(14);
-    doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 42);
-    // JPEG at reduced quality is far smaller than full PNG
-    const img = chart.toBase64Image('image/jpeg', 0.7);
-    const ratio = chart.height / chart.width;
-    const imgW = (W - 80) * 0.62, imgH = imgW * ratio;
-    doc.addImage(img, 'JPEG', 40, 62, imgW, imgH, undefined, 'FAST');
-    let tx = 40 + imgW + 28, ty = 74;
-    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Values', tx, ty); ty += 18;
-    doc.setFont('helvetica','normal');
-    STEPS.forEach((p, i) => {
-      const v = inputs[i].value.trim() || '-';
-      doc.text(p + '%', tx, ty);
-      doc.text(String(v), tx + 64, ty);
-      ty += 17;
+  // Capture the chart as a PNG. Force a render, then wait for paint (prevents blank PDF).
+  function captureChartPNG(){
+    return new Promise((resolve, reject) => {
+      if (!chart){ reject(new Error('no chart')); return; }
+      const cv = document.getElementById('chart');
+      if (!cv){ reject(new Error('no canvas')); return; }
+      chart.resize();
+      chart.update('none');
+      setTimeout(() => {
+        try{
+          const img = cv.toDataURL('image/png', 1.0);
+          if (!img || img === 'data:,' || img.length < 1000){ reject(new Error('empty')); return; }
+          resolve(img);
+        }catch(e){ reject(e); }
+      }, 250);
     });
-    return doc.output('datauristring');   // data:application/pdf;base64,....
   }
 
-  function download(){
-    if (!chart) return;
-    const a = document.createElement('a');
-    a.href = chart.toBase64Image('image/png', 1);
-    a.download = 'PowerChart' + (logId ? '_' + logId : '') + '.png';
-    a.click();
-  }
-
-  // Send base64 PDF to Flow as form text (this format reaches Flow with no 404).
-  async function postToZoho(imgData, fileType){
-    const form = new URLSearchParams();
-    form.append("recId", recId);
-    form.append("fileType", fileType);
-    form.append("imgData", imgData);
-    await fetch(FLOW_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: form.toString()
-    });
-    return "sent";
-  }
-
-  async function confirmSave(){
-    if (!chart) return;
-    const msg = document.getElementById('savemsg');
-
-    if (!recId){
-      msg.className = 'savemsg err';
-      msg.textContent = 'No record ID found. Open this chart from a saved Service record so it knows where to save.';
-      return;
-    }
-
-    msg.className = 'savemsg busy';
-    msg.textContent = 'Saving chart PDF to the record…';
-    document.getElementById('saveBtn').disabled = true;
-
+  async function downloadPDF(){
+    if (!chart){ alert('Please generate the graph first.'); return; }
+    const dl = document.getElementById('dlBtn');
+    if (dl){ dl.disabled = true; dl.textContent = 'Creating PDF…'; }
     try{
-      const pdf = pdfDataUrl();
-      await postToZoho(pdf, 'pdf');
+      const img = await captureChartPNG();
+      const jsPDFClass = window.jspdf && window.jspdf.jsPDF;
+      if (!jsPDFClass){ throw new Error('jsPDF not loaded'); }
+      const doc = new jsPDFClass({ orientation:'landscape', unit:'pt', format:'a4' });
 
-      msg.className = 'savemsg ok';
-      msg.textContent = '\u2713 Sent to the record. Open the Service record in a moment and check the Power Chart file field.';
+      // Title
+      doc.setFont('helvetica','bold'); doc.setFontSize(16);
+      doc.text('Power Chart' + (logId ? ' - ' + logId : ''), 40, 40);
+
+      // Chart image (fixed dimensions — reliable)
+      doc.addImage(img, 'PNG', 40, 65, 500, 280);
+
+      // Values table
+      let tx = 570, ty = 90;
+      doc.setFont('helvetica','bold'); doc.setFontSize(12);
+      doc.text('Values', tx, ty); ty += 22;
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      STEPS.forEach((p, i) => {
+        const v = inputs[i].value.trim() || '-';
+        doc.text(p + '%', tx, ty);
+        doc.text(String(v), tx + 70, ty);
+        ty += 18;
+      });
+
+      doc.save('PowerChart' + (logId ? '_' + logId : '') + '.pdf');
     }catch(e){
-      msg.className = 'savemsg err';
-      msg.textContent = 'Could not send. You can still use Download and upload the file manually.';
+      console.error('PDF ERROR:', e);
+      alert('Could not create the PDF. The chart image could not be captured.');
+    }finally{
+      if (dl){ dl.disabled = false; dl.textContent = 'Download PDF'; }
     }
-    document.getElementById('saveBtn').disabled = false;
   }
 
   function clearAll(){
@@ -279,17 +257,29 @@
     document.getElementById('chart').style.display = 'none';
     document.getElementById('empty').style.display = 'flex';
     document.getElementById('dlBtn').disabled = true;
-    document.getElementById('saveBtn').disabled = true;
-    document.getElementById('hint').textContent = '';
-    document.getElementById('savemsg').className = 'savemsg';
+    const hint = document.getElementById('hint'); if (hint) hint.textContent = '';
   }
 
-  document.getElementById('genBtn').addEventListener('click', generate);
-  document.getElementById('dlBtn').addEventListener('click', download);
-  document.getElementById('saveBtn').addEventListener('click', confirmSave);
-  document.getElementById('clearBtn').addEventListener('click', clearAll);
+  // Wire buttons
+  document.getElementById('genBtn') && document.getElementById('genBtn').addEventListener('click', generate);
+  document.getElementById('dlBtn') && document.getElementById('dlBtn').addEventListener('click', downloadPDF);
+  document.getElementById('clearBtn') && document.getElementById('clearBtn').addEventListener('click', clearAll);
 
   updateCount();
+
+  // If opened from the link (view mode): hide the entry UI and auto-draw the graph.
+  if (viewMode){
+    document.getElementById('sub').textContent = logId ? ('Record: ' + logId) : 'Power Chart';
+    const ip = document.getElementById('inputPanel');
+    if (ip) ip.style.display = 'none';
+    document.getElementById('grid').classList.add('viewonly');
+    const gen = document.getElementById('genBtn');
+    if (gen) gen.style.display = 'none';
+    const clr = document.getElementById('clearBtn');
+    if (clr) clr.style.display = 'none';
+    // Auto-generate the chart from the values in the URL.
+    window.addEventListener('load', () => { generate(); });
+  }
 </script>
 </body>
 </html>
