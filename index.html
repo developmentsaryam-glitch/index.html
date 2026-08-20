@@ -263,7 +263,16 @@
   async function createAutoSavePDF(){
     await captureChartPNG();
     const cv = document.getElementById('chart');
-    const imgJpeg = cv.toDataURL('image/jpeg', 0.7);
+
+    const tmp = document.createElement('canvas');
+    tmp.width = cv.width;
+    tmp.height = cv.height;
+    const tctx = tmp.getContext('2d');
+    tctx.fillStyle = '#ffffff';
+    tctx.fillRect(0, 0, tmp.width, tmp.height);
+    tctx.drawImage(cv, 0, 0);
+    const imgJpeg = tmp.toDataURL('image/jpeg', 0.7);
+
     const jsPDFClass = window.jspdf && window.jspdf.jsPDF;
     const doc = new jsPDFClass({ orientation:'landscape', unit:'pt', format:'a4' });
     doc.setFont('helvetica','bold'); doc.setFontSize(16);
