@@ -260,26 +260,44 @@
     }catch(e){ alert('Could not capture the chart image. Try Generate again.'); }
   }
 
-    async function createAutoSavePDF(){
-    const img = await captureChartPNG();   // SAME capture the working Download uses
+      // Shrink the known-good chart PNG onto a smaller white canvas -> small file, graph still visible.
+  function shrinkChartImage(pngDataUrl, targetW){
+    return new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => {
+        try{
+          const scale = targetW / im.width;
+          const w = targetW, h = Math.round(im.height * scale);
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          const ctx = c.getContext('2d');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,w,h);
+          ctx.drawImage(im, 0, 0, w, h);
+          resolve({ data: c.toDataURL('image/jpeg', 0.8), w, h });
+        }catch(e){ reject(e); }
+      };
+      im.onerror = () => reject(new Error('img load fail'));
+      im.src = pngDataUrl;
+    });
+  }
+
+  async function createAutoSavePDF(){
+    const pngImg = await captureChartPNG();
+    const small = await shrinkChartImage(pngImg, 700);
 
     const jsPDFClass = window.jspdf && window.jspdf.jsPDF;
     const doc = new jsPDFClass({ orientation:'landscape', unit:'pt', format:'a4' });
 
-    // Title
     doc.setFont('helvetica','bold'); doc.setFontSize(16);
     doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 40);
 
-    // Chart (exactly like the working Download — PNG)
-    doc.addImage(img, 'PNG', 40, 65, 500, 280);
+    doc.addImage(small.data, 'JPEG', 40, 65, 500, 280);
 
-    // Values table
     let tx = 570, ty = 90;
     doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text('Values', tx, ty); ty += 22;
     doc.setFont('helvetica','normal'); doc.setFontSize(10);
     STEPS.forEach((p,i)=>{ const v=inputs[i].value.trim()||'-'; doc.text(p+'%',tx,ty); doc.text(String(v),tx+70,ty); ty+=18; });
 
-    // Footer
     const today = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
     doc.setFontSize(9); doc.setTextColor(120);
     doc.text((logId ? 'Record: ' + logId + '     ' : '') + 'Generated: ' + today, 40, 560);
