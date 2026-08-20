@@ -260,32 +260,31 @@
     }catch(e){ alert('Could not capture the chart image. Try Generate again.'); }
   }
 
-  async function createAutoSavePDF(){
-    await captureChartPNG();
-    const cv = document.getElementById('chart');
-
-    const tmp = document.createElement('canvas');
-    tmp.width = cv.width;
-    tmp.height = cv.height;
-    const tctx = tmp.getContext('2d');
-    tctx.fillStyle = '#ffffff';
-    tctx.fillRect(0, 0, tmp.width, tmp.height);
-    tctx.drawImage(cv, 0, 0);
-    const imgJpeg = tmp.toDataURL('image/jpeg', 0.7);
+    async function createAutoSavePDF(){
+    const img = await captureChartPNG();   // SAME capture the working Download uses
 
     const jsPDFClass = window.jspdf && window.jspdf.jsPDF;
     const doc = new jsPDFClass({ orientation:'landscape', unit:'pt', format:'a4' });
+
+    // Title
     doc.setFont('helvetica','bold'); doc.setFontSize(16);
     doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 40);
-    doc.addImage(imgJpeg, 'JPEG', 40, 65, 500, 280);
+
+    // Chart (exactly like the working Download — PNG)
+    doc.addImage(img, 'PNG', 40, 65, 500, 280);
+
+    // Values table
     let tx = 570, ty = 90;
     doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text('Values', tx, ty); ty += 22;
     doc.setFont('helvetica','normal'); doc.setFontSize(10);
     STEPS.forEach((p,i)=>{ const v=inputs[i].value.trim()||'-'; doc.text(p+'%',tx,ty); doc.text(String(v),tx+70,ty); ty+=18; });
+
+    // Footer
     const today = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
     doc.setFontSize(9); doc.setTextColor(120);
     doc.text((logId ? 'Record: ' + logId + '     ' : '') + 'Generated: ' + today, 40, 560);
     doc.setTextColor(0);
+
     return doc.output('datauristring');
   }
 
