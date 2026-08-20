@@ -260,7 +260,6 @@
     }catch(e){ alert('Could not capture the chart image. Try Generate again.'); }
   }
 
-      // Shrink the known-good chart PNG onto a smaller white canvas -> small file, graph still visible.
   function shrinkChartImage(pngDataUrl, targetW){
     return new Promise((resolve, reject) => {
       const im = new Image();
@@ -283,7 +282,7 @@
 
   async function createAutoSavePDF(){
     const pngImg = await captureChartPNG();
-    const small = await shrinkChartImage(pngImg, 700);
+    const small = await shrinkChartImage(pngImg, 420);
 
     const jsPDFClass = window.jspdf && window.jspdf.jsPDF;
     const doc = new jsPDFClass({ orientation:'landscape', unit:'pt', format:'a4' });
