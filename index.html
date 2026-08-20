@@ -121,8 +121,9 @@
     arr.forEach((v,i)=>{ if(inputs[i] && v!=='') inputs[i].value = v; });
   }
 
-  // VIEW MODE: opened from the saved link (has vals). Show only the graph + Download.
-  const viewMode = !!valsParam;
+  // VIEW MODE = opened from the saved report link (has &view=1). Show only the graph.
+  // Submit-time (no view flag) shows the full page with Generate/Download.
+  const viewMode = params.get('view') === '1';
 
   let chart = null;
 
@@ -267,7 +268,7 @@
 
   updateCount();
 
-  // If opened from the link (view mode): hide the entry UI and auto-draw the graph.
+  // If opened from the report link (view mode): hide the entry UI, show only the graph.
   if (viewMode){
     document.getElementById('sub').textContent = logId ? ('Record: ' + logId) : 'Power Chart';
     const ip = document.getElementById('inputPanel');
@@ -277,7 +278,12 @@
     if (gen) gen.style.display = 'none';
     const clr = document.getElementById('clearBtn');
     if (clr) clr.style.display = 'none';
-    // Auto-generate the chart from the values in the URL.
+    const dl = document.getElementById('dlBtn');
+    if (dl) dl.style.display = 'none';   // report view = graph only, no download button
+  }
+
+  // Whenever values are present in the URL (submit-time OR report link), draw the chart on load.
+  if (valsParam){
     window.addEventListener('load', () => { generate(); });
   }
 </script>
