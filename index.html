@@ -50,15 +50,9 @@
   .btn-primary:hover{background:var(--blue-dk);border-color:var(--blue-dk);}
   .btn-ghost{background:#fff;color:var(--ink);border-color:var(--border);}
   .btn-ghost:hover{border-color:#cfd6e2;}
-  .btn-save{background:var(--green);color:#fff;border-color:var(--green);}
-  .btn-save:hover{background:#128a37;border-color:#128a37;}
   button:disabled{opacity:.45;cursor:not-allowed;}
   .backlink{display:none;margin-top:6px;font-size:13px;color:#2563eb;text-decoration:none;font-weight:600;}
   .backlink:hover{text-decoration:underline;}
-  .savemsg{margin-top:12px;font-size:13px;border-radius:8px;padding:10px 14px;display:none;}
-  .savemsg.ok{color:#0f5132;background:#e7f6ec;border:1px solid #bfe6cd;display:block;}
-  .savemsg.err{color:#842029;background:#fbe7e9;border:1px solid #f2c2c7;display:block;}
-  .savemsg.busy{color:#0c447c;background:#e6f1fb;border:1px solid #bcd3f2;display:block;}
   .canvas-box{position:relative;height:440px;}
   .empty{display:flex;align-items:center;justify-content:center;height:440px;text-align:center;
     color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:10px;
@@ -105,7 +99,6 @@
           <button class="btn-ghost" id="dlPngBtn" disabled>Download PNG</button>
           <button class="btn-ghost" id="dlBtn" disabled>Download PDF</button>
           <button class="btn-primary" id="genBtn">Generate graph</button>
-          <button class="btn-save" id="saveBtn" disabled>&#10003; Confirm &amp; Save</button>
         </div>
       </div>
       <div class="canvas-box">
@@ -113,13 +106,11 @@
         <canvas id="chart" style="display:none;"></canvas>
       </div>
       <div class="hint" id="hint"></div>
-      <div class="savemsg" id="savemsg"></div>
     </div>
   </div>
 </div>
 
 <script>
-  const FLOW_URL = "https://flow.zoho.com/896521609/flow/webhook/incoming?zapikey=1001.7d266c9bcbac67cfaaefc10acb747cc7.1f5f898a292dadc78e79d5fe2e459b75&isdebug=false";
   const STEPS = [10,20,30,40,50,60,70,80,90,100];
   const inputs = Array.from(document.querySelectorAll('input[data-pct]'));
   const params = new URLSearchParams(location.search);
@@ -128,7 +119,7 @@
   if (logId) document.getElementById('sub').textContent = 'Record: ' + logId;
 
   const valsParam = params.get('vals');
-  const reportParam = params.get('report') || 'Service_Report';   // which form's report
+  const reportParam = params.get('report') || 'Service_Report';
   const backUrl = "https://creatorapp.zoho.com/sarathynds_saryam/jenoptik-logs#Report:" + reportParam;
   if (valsParam){
     const arr = valsParam.split(',');
@@ -203,7 +194,7 @@
     chart = new Chart(cv.getContext('2d'), cfg);
     chart.resize();
     chart.update('none');
-    ['dlBtn','dlPngBtn','saveBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
+    ['dlBtn','dlPngBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = false; });
   }
 
   function captureChartPNG(){
@@ -265,64 +256,24 @@
     }catch(e){ alert('Could not capture the chart image. Try Generate again.'); }
   }
 
-  // ---- AUTO-SAVE: browser sends ONLY the small values; Creator builds the PDF ----
-  function valuesCsv(){
-    return inputs.map(el => el.value.trim()).join(',');
-  }
-
-  async function saveToFlow(valsCsv){
-    const form = new URLSearchParams();
-    form.append('recId', recId);
-    form.append('fileType', reportParam);   // carry the report name (which form)
-    form.append('imgData', valsCsv);        // the values
-    await fetch(FLOW_URL, { method:'POST', mode:'no-cors',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: form.toString() });
-  }
-
-  async function confirmSave(){
-    if (!chart){ return; }
-    const msg = document.getElementById('savemsg');
-    if (!recId){
-      msg.className = 'savemsg err';
-      msg.textContent = 'No record ID found. Open this chart from a saved record.';
-      return;
-    }
-    const btn = document.getElementById('saveBtn');
-    msg.className = 'savemsg busy';
-    msg.textContent = 'Saving chart to the record…';
-    if (btn) btn.disabled = true;
-    try{
-      await saveToFlow(valuesCsv());
-      msg.className = 'savemsg ok';
-      msg.textContent = '\u2713 Sent to the record. Give it a moment, then check the record.';
-    }catch(e){
-      msg.className = 'savemsg err';
-      msg.textContent = 'Could not send. You can use Download PDF/PNG and attach manually.';
-    }
-    if (btn) btn.disabled = false;
-  }
-
   function clearAll(){
     inputs.forEach(el => el.value = '');
     updateCount();
     if (chart){ chart.destroy(); chart = null; }
     document.getElementById('chart').style.display = 'none';
     document.getElementById('empty').style.display = 'flex';
-    ['dlBtn','dlPngBtn','saveBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
+    ['dlBtn','dlPngBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
     const hint = document.getElementById('hint'); if (hint) hint.textContent = '';
-    const msg = document.getElementById('savemsg'); if (msg){ msg.className = 'savemsg'; msg.textContent = ''; }
   }
 
   const wire = (id, fn) => { const b = document.getElementById(id); if (b) b.addEventListener('click', fn); };
   wire('genBtn', generate);
   wire('dlBtn', downloadPDF);
   wire('dlPngBtn', downloadPNG);
-  wire('saveBtn', confirmSave);
   wire('clearBtn', clearAll);
 
   updateCount();
 
-  // Show the Back button when opened from a record — goes to that form's report (any form).
   if (recId){
     const bb = document.getElementById('backBtn');
     if (bb){ bb.href = backUrl; bb.style.display = 'inline-block'; }
@@ -333,7 +284,7 @@
     const ip = document.getElementById('inputPanel');
     if (ip) ip.style.display = 'none';
     document.getElementById('grid').classList.add('viewonly');
-    ['genBtn','clearBtn','dlBtn','dlPngBtn','saveBtn'].forEach(id => {
+    ['genBtn','clearBtn','dlBtn','dlPngBtn'].forEach(id => {
       const b = document.getElementById(id); if (b) b.style.display = 'none';
     });
   }
