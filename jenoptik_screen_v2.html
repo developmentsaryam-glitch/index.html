@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jenoptik VOTAN — Data Record Viewer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --panel:#c3c7cb;--panel-dark:#b4b8bd;--field:#e9ecef;--field-border:#8a9199;
+    --ink:#1b1f24;--ink-soft:#3d444c;--tab:#c9cdd2;--tab-active:#eef1f4;
+    --line:#9aa0a7;--green:#3fb549;--title:#0b3d2e;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:#4a4f55;font-family:'Segoe UI',Tahoma,Arial,sans-serif;color:var(--ink);padding:14px;}
+  .toolbar{max-width:1180px;margin:0 auto 12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .up-btn{background:#2f6fb0;color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border:none;border-radius:6px;cursor:pointer;}
+  .up-btn:hover{background:#255a90;}
+  .up-status{color:#cfd6dd;font-size:12px;}
+  #pdfInput{display:none;}
+  .machine{max-width:1180px;margin:0 auto;background:var(--panel);border:2px solid #7d8288;border-radius:4px;box-shadow:0 10px 40px rgba(0,0,0,.5);overflow:hidden;}
+  .titlebar{background:linear-gradient(#2f3a44,#1e262e);color:#dfe6ec;padding:7px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;}
+  .titlebar .brand{color:#8fd14f;font-weight:700;}
+  .menubar{background:var(--panel-dark);border-bottom:1px solid var(--line);padding:5px 12px;font-size:12px;color:var(--ink-soft);display:flex;gap:18px;}
+  .rec-head{padding:12px 16px 8px;display:flex;flex-direction:column;gap:7px;}
+  .rec-line{display:flex;align-items:center;gap:12px;font-size:12.5px;}
+  .rec-line label{width:150px;color:var(--ink-soft);}
+  .rec-val{background:var(--field);border:1px solid var(--field-border);border-radius:2px;padding:3px 10px;font-size:12.5px;min-width:190px;text-align:center;color:#20303a;}
+  .toprow{display:flex;flex-wrap:wrap;gap:22px;align-items:center;padding:6px 16px 12px;font-size:12px;color:var(--ink-soft);border-bottom:1px solid var(--line);}
+  .toprow .cell{display:flex;align-items:center;gap:7px;}
+  .mini{background:var(--field);border:1px solid var(--field-border);border-radius:2px;padding:2px 8px;min-width:44px;text-align:center;}
+  .onpill{background:var(--green);color:#08300c;font-weight:700;font-size:10px;padding:2px 7px;border-radius:2px;}
+  .offpill{background:#aeb4ba;color:#333;font-weight:700;font-size:10px;padding:2px 7px;border-radius:2px;}
+  .body{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;padding:14px 16px;}
+  .frame{border:1px solid var(--line);border-radius:3px;background:var(--panel);}
+  .frame-title{font-size:11px;color:var(--ink-soft);padding:5px 10px;border-bottom:1px solid var(--line);background:var(--panel-dark);font-weight:600;}
+  table.rh{width:100%;border-collapse:collapse;font-size:11px;}
+  table.rh th{background:var(--panel-dark);color:var(--ink-soft);font-weight:600;padding:5px 4px;border:1px solid var(--line);font-size:10px;line-height:1.15;vertical-align:bottom;}
+  table.rh td{border:1px solid var(--line);padding:3px 4px;text-align:center;background:var(--panel);}
+  table.rh td.idcell{background:#e7cf9a;font-weight:700;color:#5a4a1e;}
+  table.rh td .box{background:var(--field);border:1px solid var(--field-border);border-radius:2px;padding:2px 4px;display:inline-block;min-width:30px;}
+  .tabwrap{display:flex;flex-direction:column;}
+  .tabs{display:flex;flex-wrap:wrap;background:var(--panel-dark);border-bottom:1px solid var(--line);}
+  .tab{font-size:11.5px;padding:7px 13px;border:1px solid var(--line);border-bottom:none;background:var(--tab);cursor:pointer;color:var(--ink-soft);border-radius:4px 4px 0 0;margin:3px 1px 0;user-select:none;}
+  .tab.active{background:var(--tab-active);color:#0b2d4a;font-weight:700;box-shadow:0 -2px 0 #2f6fb0 inset;}
+  .tabclose{color:#b23;font-weight:700;margin-right:4px;}
+  .panel-body{padding:14px 16px;min-height:360px;}
+  .panel-h{font-size:13px;font-weight:700;color:var(--title);margin:0 0 12px;}
+  .kv{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 0;font-size:12px;border-bottom:1px dotted #a9afb6;}
+  .kv:last-child{border-bottom:none;}
+  .kv .k{color:var(--ink-soft);}
+  .kv .v{background:var(--field);border:1px solid var(--field-border);border-radius:2px;padding:2px 10px;min-width:70px;text-align:center;}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:0 26px;}
+  .sub-grid{display:grid;gap:4px;font-size:11px;}
+  .sub-grid .h{font-weight:700;color:var(--ink-soft);padding:4px;background:var(--panel-dark);border:1px solid var(--line);}
+  .sub-grid .c{padding:4px;border:1px solid var(--line);text-align:center;background:var(--field);}
+  .sub-grid .lbl{padding:4px;border:1px solid var(--line);color:var(--ink-soft);}
+  .btnbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px 14px;border-top:1px solid var(--line);background:var(--panel-dark);}
+  .mbtn{flex:1;min-width:96px;text-align:center;font-size:11px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:9px 4px;line-height:1.2;}
+  .mbtn b{display:block;color:#1b1f24;font-size:11px;}
+  .hint{max-width:1180px;margin:10px auto 0;color:#cfd6dd;font-size:12px;}
+  @media(max-width:820px){.body{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <button class="up-btn" id="uploadBtn">Upload machine PDF</button>
+  <input type="file" id="pdfInput" accept="application/pdf">
+  <span class="up-status" id="upStatus">Showing sample data. Upload a machine data-record PDF to load real values.</span>
+</div>
+
+<div class="machine">
+  <div class="titlebar">
+    <span>Laser - Sensor - Control - Technology 6.0 MC — <span class="brand">JENOPTIK-VOTAN&reg; A408</span></span>
+    <span style="opacity:.6;">laser ready</span>
+  </div>
+  <div class="menubar"><span>File</span><span>Functions</span><span>Help</span><span>Shift Counter</span><span>Exit</span><span>Language</span></div>
+  <div class="rec-head">
+    <div class="rec-line"><label>Data Record title</label><div class="rec-val" id="dr_title">—</div></div>
+    <div class="rec-line"><label>Data Record number</label><div class="rec-val" id="dr_number">—</div></div>
+  </div>
+  <div class="toprow">
+    <div class="cell"><span class="onpill">ON</span> Show only parameterized ID's</div>
+    <div class="cell">Switch off value P1 (V) <span class="mini" id="so_p1">—</span></div>
+    <div class="cell">Switch off value P2 (V) <span class="mini" id="so_p2">—</span></div>
+    <div class="cell">No. of attenuators <span class="mini" id="attn">—</span> <span class="offpill">OFF</span> Choice by robot</div>
+  </div>
+  <div class="body">
+    <div class="frame">
+      <div class="frame-title">Reference hole</div>
+      <div style="padding:8px;overflow-x:auto;">
+        <table class="rh">
+          <thead><tr>
+            <th>ID</th><th>Distance<br>(ms)</th><th>Amplic.<br>WS %</th><th>Power<br>P1 %</th>
+            <th>Pulses P1<br>(start no.)</th><th>Pulses P1<br>control</th><th>Power<br>P2 %</th>
+            <th>Pulses P2<br>(max. no.)</th><th>Load<br>new</th>
+          </tr></thead>
+          <tbody id="rh_body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="frame tabwrap">
+      <div class="tabs" id="tabs">
+        <div class="tab" data-tab="SH1"><span class="tabclose">&times;</span>SH 1</div>
+        <div class="tab" data-tab="SH2"><span class="tabclose">&times;</span>SH 2</div>
+        <div class="tab" data-tab="PBH"><span class="tabclose">&times;</span>PBH</div>
+        <div class="tab" data-tab="Bridges"><span class="tabclose">&times;</span>Bridges</div>
+        <div class="tab" data-tab="General">General</div>
+        <div class="tab" data-tab="Distance">Distance</div>
+        <div class="tab active" data-tab="AC">AC</div>
+        <div class="tab" data-tab="Barcode">Barcode</div>
+      </div>
+      <div class="panel-body" id="panel"></div>
+    </div>
+  </div>
+  <div class="btnbar">
+    <div class="mbtn">Exit <b>(F4)</b></div><div class="mbtn">Evaluation <b>(F5)</b></div>
+    <div class="mbtn">Adjustment <b>(F6)</b></div><div class="mbtn">Login/Out <b>(F7)</b></div>
+    <div class="mbtn">Settings <b>(F8)</b></div><div class="mbtn">Options <b>(F9)</b></div>
+    <div class="mbtn">Errors <b>(F10)</b></div><div class="mbtn">Graph</div>
+  </div>
+</div>
+<div class="hint" id="hint">Sample data. Upload a machine PDF to replace with real values.</div>
+
+<script>
+if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }
+
+/* ---------- SAMPLE DATA (shown until a PDF is uploaded) ---------- */
+var SAMPLE = {
+  header:{title:"U171_H_RHD_PROD",number:"20.0.0 MP",switch_off_p1:"4.0",switch_off_p2:"0.6",attenuators:"0"},
+  reference_holes:[
+    {id:0,dist:"21.7",amp:"100",p1:"80",pulses1:"5",ctrl:"ON",p2:"30",pulses2:"40",load:"OFF"},
+    {id:1,dist:"21.7",amp:"100",p1:"80",pulses1:"5",ctrl:"ON",p2:"30",pulses2:"40",load:"OFF"},
+    {id:2,dist:"21.7",amp:"100",p1:"80",pulses1:"5",ctrl:"ON",p2:"30",pulses2:"40",load:"OFF"}
+  ],
+  tabs:{
+    General:{title:"General parameter",rows:[["Switch off value P1 (V)","4.0"],["Switch off value P2 (V)","0.6"],["No. of attenuators","0"]]},
+    AC:{title:"Additional Cut",rows:[["Power %","60"],["Frequency Hz","5000"],["Duty cycle %","57"]]},
+    Barcode:{title:"Barcode",rows:[["Mode","Without"]]},
+    SH1:{title:"Sensor adjustment — MCT-L1",rows:[["Amplification WS %","2"]]},
+    SH2:{title:"Sensor adjustment — MCT-AP-L1",rows:[["Amplification WS %","2"]]},
+    PBH:{title:"PBH",table:{head:["ID","PBH active","Power %","DC %"],rows:[["0","disabled","15","15"]]}},
+    Bridges:{title:"Bridges",table:{head:["ID","Holes on","Holes off"],rows:[["0","1","0"]]}},
+    Distance:{title:"Distance",table:{head:["ID","Calc.","Distance (mm)","V robot","Focus"],rows:[["0","enabled","0.24","30","0"]]}}
+  }
+};
+var DATA = SAMPLE;
+
+/* ========================================================
+   PDF PARSER  — builds the DATA object from a machine PDF
+   ======================================================== */
+function firstMatch(line, label, extra){
+  if(line.indexOf(label)===0){
+    var rest = line.substring(label.length).trim();
+    var re = extra || /^(-?[\d.]+|disabled|enabled|inactive|active)/;
+    var m = rest.match(re);
+    return m ? m[1] : "";
+  }
+  return null;
+}
+
+function parseText(pages){
+  var d = {header:{}, reference_holes:[], tabs:{}};
+  var p1lines = (pages[0]||"").split("\n");
+
+  /* ---- header title/number ---- */
+  var titleLine = p1lines[0] || "";
+  // e.g. "2.0.0 - SK216RHD MCT V_30_PROD A173"  -> take part after " - "
+  var t = titleLine.split(" - ");
+  d.header.title = (t.length>1 ? t.slice(1).join(" - ") : titleLine).replace(/\s+A\d+\s*$/,"").trim();
+  d.header.number = t[0] ? t[0].trim() : "";
+
+  /* ---- General parameter (left column) ---- */
+  var genLabels = ["Switch off value P1 (V)","Switch off value P2 (V)","No. of attenuators",
+    "Choice by robot","MCT sensor","DP: Max. number > 10V","Delay holes","Max. number of holes",
+    "Target range pulses P2 min.","Target range pulses P2 max.","Start at signal RS V",
+    "Amplification RS %","Focus distance control","Hole aperture"];
+  var gen = [];
+  p1lines.forEach(function(line){
+    genLabels.forEach(function(lb){
+      var v = firstMatch(line, lb);
+      if(v!==null && v!==""){ gen.push([lb, v]); }
+    });
+  });
+  if(gen.length){
+    // fill header shortcuts
+    gen.forEach(function(r){
+      if(r[0]==="Switch off value P1 (V)") d.header.switch_off_p1=r[1];
+      if(r[0]==="Switch off value P2 (V)") d.header.switch_off_p2=r[1];
+      if(r[0]==="No. of attenuators") d.header.attenuators=r[1];
+    });
+    d.tabs.General = {title:"General parameter", rows:gen};
+  }
+
+  /* ---- Additional Cut (left column, between 'Additional cut' and 'Barcode') ---- */
+  var acLabels = ["Power %","Frequency Hz","Duty cycle %","On time ms","Off time ms",
+    "Start at signal reference sensor V","Amplification reference sensor %",
+    "Minimum number of sections","Target integral"];
+  var ac=[]; var inAC=false; var seen={};
+  p1lines.forEach(function(line){
+    if(line.indexOf("Additional cut")===0){ inAC=true; return; }
+    if(line.indexOf("Barcode")===0){ inAC=false; }
+    if(inAC){
+      acLabels.forEach(function(lb){
+        if(!seen[lb]){
+          var v=firstMatch(line, lb, /^(-?[\d.]+)/);
+          if(v!==null && v!==""){ ac.push([lb,v]); seen[lb]=1; }
+        }
+      });
+    }
+  });
+  if(ac.length) d.tabs.AC = {title:"Additional Cut", rows:ac};
+
+  /* ---- Sensor adjustment (right column of page 1): SH1=MCT-L1, SH2=MCT-AP-L1 ---- */
+  var saLabels = ["Amplification WS %","Amplification RS %","Number of pulses","Power %",
+    "Frequency Hz","Duty cycle %","Channel 1 Nom. AS","Channel 2 Nom. AS","Channel 3 Nom. AS",
+    "Channel 4 Nom. AS","Sum Nom. AS","Tolerance +/-","Nom. WS/RS","Tolerance WS/RS"];
+  var sh1=[], sh2=[];
+  p1lines.forEach(function(line){
+    saLabels.forEach(function(lb){
+      var idx = line.indexOf(lb);
+      if(idx>0){ // right column, so label is not at start
+        var rest = line.substring(idx+lb.length).trim();
+        // two numbers: L1 and AP-L1
+        var m = rest.match(/^(-?[\d.]+)\s+(-?[\d.]+)/);
+        if(m){ sh1.push([lb,m[1]]); sh2.push([lb,m[2]]); }
+      }
+    });
+  });
+  if(sh1.length) d.tabs.SH1 = {title:"Sensor adjustment — MCT-L1", rows:sh1};
+  if(sh2.length) d.tabs.SH2 = {title:"Sensor adjustment — MCT-AP-L1", rows:sh2};
+
+  /* ---- Barcode (left column below Additional cut) ---- */
+  var bc=[]; var inBC=false;
+  var bcMap = {"Without":"Mode: Without","Print":"Print","Read":"Read","Read and print":"Read and print",
+    "Check barcode length":"Check barcode length","Barcode length":"Barcode length"};
+  p1lines.forEach(function(line){
+    if(line.indexOf("Barcode")===0){ inBC=true; return; }
+    if(inBC){
+      Object.keys(bcMap).forEach(function(k){
+        if(line.indexOf(k)===0){
+          var rest=line.substring(k.length).trim();
+          var m=rest.match(/^(enabled|disabled|active|inactive|[\d.]+)/);
+          if(m) bc.push([bcMap[k], m[1]]);
+        }
+      });
+    }
+  });
+  if(bc.length) d.tabs.Barcode = {title:"Barcode", rows:bc};
+
+  /* ---- Page 2: Reference holes (Settings F8 main table) ---- */
+  var p2lines = (pages[1]||"").split("\n");
+  var rows=[];
+  p2lines.forEach(function(line){
+    var m = line.match(/^(\d+)\s+([\d.]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(enabled|disabled)\s+(\d+)\s+(\d+)\s+(\d+)/);
+    if(m && rows.length<10){
+      rows.push({id:m[1],dist:m[2],amp:m[3],p1:m[4],pulses1:m[6],
+                 ctrl:(m[7]==="enabled"?"ON":"OFF"),p2:m[8],pulses2:m[10],load:"OFF"});
+    }
+  });
+  if(rows.length) d.reference_holes = rows;
+
+  /* ---- Page 2: PBH table  (ID PBH active Power% DC% Start End Ctrl Target) ---- */
+  var pbh=[];
+  p2lines.forEach(function(line){
+    var m=line.match(/^(\d+)\s+(disabled|enabled)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(disabled|enabled)\s+(\d+)/);
+    if(m && pbh.length<10) pbh.push([m[1],m[2],m[3],m[4],m[5],m[6],m[7],m[8]]);
+  });
+  if(pbh.length) d.tabs.PBH={title:"PBH",table:{head:["ID","PBH active","Power %","DC %","Start after","End before","Ctrl power","Target"],rows:pbh}};
+
+  /* ---- Page 2: Bridges (Number holes on / off) ---- */
+  var br=[]; var inBr=false;
+  p2lines.forEach(function(line){
+    if(/Number\s+Number/.test(line) || /holes on/.test(line)){ inBr=true; }
+    if(inBr){
+      var m=line.match(/^(\d+)\s+(\d+)\s+(\d+)\s*$/);
+      if(m && br.length<10) br.push([m[1],m[2],m[3]]);
+    }
+  });
+  if(br.length) d.tabs.Bridges={title:"Bridges",table:{head:["ID","Holes on","Holes off"],rows:br}};
+
+  return d;
+}
+
+async function handlePDF(file){
+  setStatus("Reading "+file.name+" …");
+  try{
+    var buf = await file.arrayBuffer();
+    var pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    var pages=[];
+    for(var i=1;i<=pdf.numPages;i++){
+      var page = await pdf.getPage(i);
+      var tc = await page.getTextContent();
+      // reconstruct lines by Y position
+      var items = tc.items.map(function(it){ return {s:it.str, x:it.transform[4], y:Math.round(it.transform[5])}; });
+      var byY={};
+      items.forEach(function(it){ (byY[it.y]=byY[it.y]||[]).push(it); });
+      var ys = Object.keys(byY).map(Number).sort(function(a,b){return b-a;});
+      var lines = ys.map(function(y){
+        return byY[y].sort(function(a,b){return a.x-b.x;}).map(function(it){return it.s;}).join(" ").replace(/\s+/g," ").trim();
+      });
+      pages.push(lines.join("\n"));
+    }
+    var parsed = parseText(pages);
+    if(!parsed.reference_holes.length && !parsed.tabs.General){
+      setStatus("Could not read this PDF's layout. Is it a machine data-record export?");
+      return;
+    }
+    DATA = parsed;
+    renderAll();
+    var firstTab = document.querySelector('.tab[data-tab=AC]') ? 'AC' : Object.keys(DATA.tabs)[0];
+    activateTab(firstTab);
+    setStatus("Loaded: "+file.name);
+    document.getElementById('hint').textContent = "Showing values from "+file.name;
+  }catch(e){
+    setStatus("Error reading PDF: "+e.message);
+  }
+}
+function setStatus(t){ document.getElementById('upStatus').textContent=t; }
+
+/* ---------- RENDER ---------- */
+function renderHeader(){
+  var hd=DATA.header||{};
+  document.getElementById('dr_title').textContent = hd.title||"—";
+  document.getElementById('dr_number').textContent = hd.number||"—";
+  document.getElementById('so_p1').textContent = hd.switch_off_p1||"—";
+  document.getElementById('so_p2').textContent = hd.switch_off_p2||"—";
+  document.getElementById('attn').textContent = hd.attenuators||"—";
+}
+function renderRefHoles(){
+  var b=document.getElementById('rh_body'); b.innerHTML='';
+  (DATA.reference_holes||[]).forEach(function(r){
+    var ctrl=r.ctrl==='ON'?"<span class='onpill'>ON</span>":"<span class='offpill'>OFF</span>";
+    var load=r.load==='ON'?"<span class='onpill'>ON</span>":"<span class='offpill'>OFF</span>";
+    b.innerHTML+="<tr><td class='idcell'>"+r.id+"</td>"+
+      "<td><span class='box'>"+r.dist+"</span></td><td><span class='box'>"+r.amp+"</span></td>"+
+      "<td><span class='box'>"+r.p1+"</span></td><td><span class='box'>"+r.pulses1+"</span></td>"+
+      "<td>"+ctrl+"</td><td><span class='box'>"+r.p2+"</span></td>"+
+      "<td><span class='box'>"+r.pulses2+"</span></td><td>"+load+"</td></tr>";
+  });
+}
+function renderTab(name){
+  var t=(DATA.tabs||{})[name]; var p=document.getElementById('panel');
+  if(!t){ p.innerHTML="<div class='panel-h'>"+name+"</div><div style='color:#667;font-size:12px;'>No data for this tab in this record.</div>"; return; }
+  var html="<div class='panel-h'>"+t.title+"</div>";
+  if(t.rows){
+    if(t.rows.length>8){
+      var half=Math.ceil(t.rows.length/2);
+      html+="<div class='twocol'><div>";
+      t.rows.slice(0,half).forEach(function(r){ html+="<div class='kv'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>"; });
+      html+="</div><div>";
+      t.rows.slice(half).forEach(function(r){ html+="<div class='kv'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>"; });
+      html+="</div></div>";
+    } else {
+      t.rows.forEach(function(r){ html+="<div class='kv'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>"; });
+    }
+  } else if(t.table){
+    var cols=t.table.head.length;
+    html+="<div class='sub-grid' style='grid-template-columns:repeat("+cols+",1fr);'>";
+    t.table.head.forEach(function(h){ html+="<div class='h'>"+h+"</div>"; });
+    t.table.rows.forEach(function(row){ row.forEach(function(c,i){ html+="<div class='"+(i===0?'lbl':'c')+"'>"+c+"</div>"; }); });
+    html+="</div>";
+  }
+  p.innerHTML=html;
+}
+function activateTab(name){
+  var tabs=document.querySelectorAll('.tab');
+  tabs.forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-tab')===name); });
+  renderTab(name);
+}
+function renderAll(){ renderHeader(); renderRefHoles(); }
+
+function initTabs(){
+  document.querySelectorAll('.tab').forEach(function(tb){
+    tb.addEventListener('click', function(){ activateTab(tb.getAttribute('data-tab')); });
+  });
+}
+document.getElementById('uploadBtn').addEventListener('click', function(){ document.getElementById('pdfInput').click(); });
+document.getElementById('pdfInput').addEventListener('change', function(e){ if(e.target.files[0]) handlePDF(e.target.files[0]); });
+
+renderAll(); activateTab('AC'); initTabs();
+</script>
+</body>
+</html>
