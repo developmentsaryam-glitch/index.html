@@ -165,10 +165,12 @@ function parseText(pages){
 
   /* ---- header title/number ---- */
   var titleLine = p1lines[0] || "";
-  // e.g. "2.0.0 - SK216RHD MCT V_30_PROD A173"  -> take part after " - "
   var t = titleLine.split(" - ");
-  d.header.title = (t.length>1 ? t.slice(1).join(" - ") : titleLine).replace(/\s+A\d+\s*$/,"").trim();
   d.header.number = t[0] ? t[0].trim() : "";
+  var rawTitle = (t.length>1 ? t.slice(1).join(" - ") : "");
+  rawTitle = rawTitle.replace(/\s*A\d+\b.*$/,"").trim();
+  rawTitle = rawTitle.replace(/\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/,"").trim();
+  d.header.title = rawTitle || "(no title)";
 
   /* ---- General parameter (left column) ---- */
   var genLabels = ["Switch off value P1 (V)","Switch off value P2 (V)","No. of attenuators",
