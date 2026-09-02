@@ -10,53 +10,46 @@
     --ink:#1b1f24;--ink-soft:#3d444c;--tab:#c9cdd2;--tab-active:#eef1f4;--line:#9aa0a7;--green:#3fb549;--title:#0b3d2e;}
   *{box-sizing:border-box;}
   body{margin:0;background:#4a4f55;font-family:'Segoe UI',Tahoma,Arial,sans-serif;color:var(--ink);padding:14px;}
-  .toolbar{max-width:1180px;margin:0 auto 12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .toolbar{max-width:1300px;margin:0 auto 12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
   .up-btn{background:#2f6fb0;color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border:none;border-radius:6px;cursor:pointer;}
   .up-btn:hover{background:#255a90;}
   .up-status{color:#cfd6dd;font-size:12px;}
   #pdfInput{display:none;}
-  .machine{max-width:1180px;margin:0 auto;background:var(--panel);border:2px solid #7d8288;border-radius:4px;box-shadow:0 10px 40px rgba(0,0,0,.5);overflow:hidden;}
+  .machine{max-width:1300px;margin:0 auto;background:var(--panel);border:2px solid #7d8288;border-radius:4px;box-shadow:0 10px 40px rgba(0,0,0,.5);overflow:hidden;}
   .titlebar{background:linear-gradient(#2f3a44,#1e262e);color:#dfe6ec;padding:7px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;}
   .titlebar .brand{color:#8fd14f;font-weight:700;}
   .menubar{background:var(--panel-dark);border-bottom:1px solid var(--line);padding:5px 12px;font-size:12px;color:var(--ink-soft);display:flex;gap:18px;}
-  .rec-head{padding:12px 16px 8px;display:flex;flex-direction:column;gap:7px;}
+  .rec-head{padding:12px 16px 8px;display:flex;flex-wrap:wrap;gap:7px 30px;}
   .rec-line{display:flex;align-items:center;gap:12px;font-size:12.5px;}
-  .rec-line label{width:150px;color:var(--ink-soft);}
-  .rec-val{background:var(--field);border:1px solid var(--field-border);border-radius:2px;padding:3px 10px;font-size:12.5px;min-width:190px;text-align:center;color:#20303a;}
+  .rec-line label{color:var(--ink-soft);}
+  .rec-val{background:var(--field);border:1px solid var(--field-border);border-radius:2px;padding:3px 10px;font-size:12.5px;min-width:150px;text-align:center;color:#20303a;}
   .toprow{display:flex;flex-wrap:wrap;gap:22px;align-items:center;padding:6px 16px 12px;font-size:12px;color:var(--ink-soft);border-bottom:1px solid var(--line);}
   .toprow .cell{display:flex;align-items:center;gap:7px;}
   .mini{background:var(--field);border:1px solid var(--field-border);border-radius:2px;padding:2px 8px;min-width:44px;text-align:center;}
   .onpill{background:var(--green);color:#08300c;font-weight:700;font-size:10px;padding:2px 7px;border-radius:2px;}
   .offpill{background:#aeb4ba;color:#333;font-weight:700;font-size:10px;padding:2px 7px;border-radius:2px;}
-  .body{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;padding:14px 16px;}
-  .frame{border:1px solid var(--line);border-radius:3px;background:var(--panel);}
-  .frame-title{font-size:11px;color:var(--ink-soft);padding:5px 10px;border-bottom:1px solid var(--line);background:var(--panel-dark);font-weight:600;}
-  table.rh{width:100%;border-collapse:collapse;font-size:11px;}
-  table.rh th{background:var(--panel-dark);color:var(--ink-soft);font-weight:600;padding:5px 4px;border:1px solid var(--line);font-size:10px;line-height:1.15;vertical-align:bottom;}
-  table.rh td{border:1px solid var(--line);padding:3px 4px;text-align:center;background:var(--panel);}
-  table.rh td.idcell{background:#e7cf9a;font-weight:700;color:#5a4a1e;}
-  table.rh td .box{background:var(--field);border:1px solid var(--field-border);border-radius:2px;padding:2px 4px;display:inline-block;min-width:30px;}
-  .tabwrap{display:flex;flex-direction:column;}
-  .tabs{display:flex;flex-wrap:wrap;background:var(--panel-dark);border-bottom:1px solid var(--line);}
-  .tab{font-size:11.5px;padding:7px 13px;border:1px solid var(--line);border-bottom:none;background:var(--tab);cursor:pointer;color:var(--ink-soft);border-radius:4px 4px 0 0;margin:3px 1px 0;user-select:none;}
-  .tab.active{background:var(--tab-active);color:#0b2d4a;font-weight:700;box-shadow:0 -2px 0 #2f6fb0 inset;}
-  .tabclose{color:#b23;font-weight:700;margin-right:4px;}
-  .panel-body{padding:14px 16px;min-height:360px;}
-  .panel-h{font-size:13px;font-weight:700;color:var(--title);margin:0 0 12px;}
-  .kv{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 0;font-size:12px;border-bottom:1px dotted #a9afb6;}
-  .kv:last-child{border-bottom:none;}
-  .kv .k{color:var(--ink-soft);}
-  .kv .v{background:var(--field);border:1px solid var(--field-border);border-radius:2px;padding:2px 10px;min-width:70px;text-align:center;}
-  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:0 26px;}
-  .sub-grid{display:grid;gap:4px;font-size:11px;}
-  .sub-grid .h{font-weight:700;color:var(--ink-soft);padding:4px;background:var(--panel-dark);border:1px solid var(--line);}
-  .sub-grid .c{padding:4px;border:1px solid var(--line);text-align:center;background:var(--field);}
-  .sub-grid .lbl{padding:4px;border:1px solid var(--line);color:var(--ink-soft);text-align:center;background:#e7cf9a;font-weight:700;color:#5a4a1e;}
+  /* main tab bar */
+  .maintabs{display:flex;flex-wrap:wrap;gap:2px;padding:8px 12px 0;background:var(--panel-dark);border-bottom:1px solid var(--line);}
+  .mtab{font-size:12px;padding:8px 15px;border:1px solid var(--line);border-bottom:none;background:var(--tab);cursor:pointer;color:var(--ink-soft);border-radius:5px 5px 0 0;user-select:none;}
+  .mtab.active{background:var(--tab-active);color:#0b2d4a;font-weight:700;box-shadow:0 -2px 0 #2f6fb0 inset;}
+  .view{padding:14px 16px;}
+  .frame{border:1px solid var(--line);border-radius:3px;background:var(--panel);margin-bottom:14px;}
+  .frame-title{font-size:12px;color:#0b2d73;font-weight:700;padding:6px 10px;border-bottom:1px solid var(--line);background:#eef4ff;}
+  table.g{width:100%;border-collapse:collapse;font-size:11px;}
+  table.g th{background:var(--panel-dark);color:var(--ink-soft);font-weight:700;padding:5px 4px;border:1px solid var(--line);font-size:10px;line-height:1.15;vertical-align:bottom;text-align:center;}
+  table.g td{border:1px solid var(--line);padding:4px 6px;background:var(--panel);font-size:11px;}
+  table.g td.num{text-align:center;background:var(--field);}
+  table.g td.idcell{background:#e7cf9a;font-weight:700;color:#5a4a1e;text-align:center;}
+  table.g td.lbl{background:#f7f9fc;color:var(--ink-soft);width:55%;}
+  .kvtable td.val{text-align:right;font-weight:600;background:var(--field);}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .scroll{overflow-x:auto;padding:8px;}
   .btnbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px 14px;border-top:1px solid var(--line);background:var(--panel-dark);}
-  .mbtn{flex:1;min-width:96px;text-align:center;font-size:11px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:9px 4px;line-height:1.2;}
+  .mbtn{flex:1;min-width:90px;text-align:center;font-size:11px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:9px 4px;line-height:1.2;}
   .mbtn b{display:block;color:#1b1f24;font-size:11px;}
-  .hint{max-width:1180px;margin:10px auto 0;color:#cfd6dd;font-size:12px;}
-  @media(max-width:820px){.body{grid-template-columns:1fr;}}
+  .hint{max-width:1300px;margin:10px auto 0;color:#cfd6dd;font-size:12px;}
+  .empty{color:#667;font-size:12px;padding:16px;}
+  @media(max-width:820px){.two{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -75,41 +68,28 @@
   <div class="rec-head">
     <div class="rec-line"><label>Data Record title</label><div class="rec-val" id="dr_title">—</div></div>
     <div class="rec-line"><label>Data Record number</label><div class="rec-val" id="dr_number">—</div></div>
+    <div class="rec-line"><label>Machine</label><div class="rec-val" id="dr_machine">—</div></div>
   </div>
   <div class="toprow">
     <div class="cell"><span class="onpill">ON</span> Show only parameterized ID's</div>
     <div class="cell">Switch off value P1 (V) <span class="mini" id="so_p1">—</span></div>
     <div class="cell">Switch off value P2 (V) <span class="mini" id="so_p2">—</span></div>
-    <div class="cell">No. of attenuators <span class="mini" id="attn">—</span> <span class="offpill">OFF</span> Choice by robot</div>
+    <div class="cell">No. of attenuators <span class="mini" id="attn">—</span></div>
   </div>
-  <div class="body">
-    <div class="frame">
-      <div class="frame-title">Reference hole</div>
-      <div style="padding:8px;overflow-x:auto;">
-        <table class="rh">
-          <thead><tr>
-            <th>ID</th><th>Distance<br>(ms)</th><th>Amplic.<br>WS %</th><th>Power<br>P1 %</th>
-            <th>Pulses P1<br>(start no.)</th><th>Pulses P1<br>control</th><th>Power<br>P2 %</th>
-            <th>Pulses P2<br>(max. no.)</th><th>Load<br>new</th>
-          </tr></thead>
-          <tbody id="rh_body"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="frame tabwrap">
-      <div class="tabs" id="tabs">
-        <div class="tab" data-tab="SH1"><span class="tabclose">&times;</span>SH 1</div>
-        <div class="tab" data-tab="SH2"><span class="tabclose">&times;</span>SH 2</div>
-        <div class="tab" data-tab="PBH"><span class="tabclose">&times;</span>PBH</div>
-        <div class="tab" data-tab="Bridges"><span class="tabclose">&times;</span>Bridges</div>
-        <div class="tab" data-tab="General">General</div>
-        <div class="tab" data-tab="Distance">Distance</div>
-        <div class="tab active" data-tab="AC">AC</div>
-        <div class="tab" data-tab="Barcode">Barcode</div>
-      </div>
-      <div class="panel-body" id="panel"></div>
-    </div>
+
+  <div class="maintabs" id="maintabs">
+    <div class="mtab active" data-tab="general">General</div>
+    <div class="mtab" data-tab="sensor">Sensor Adj.</div>
+    <div class="mtab" data-tab="settings">Settings (F8)</div>
+    <div class="mtab" data-tab="pbh">PBH / Bridges / Distance</div>
+    <div class="mtab" data-tab="ac">Additional Cut</div>
+    <div class="mtab" data-tab="project">Project Info</div>
+    <div class="mtab" data-tab="barcode">Barcode</div>
+    <div class="mtab" data-tab="idcomments">ID Comments</div>
+    <div class="mtab" data-tab="evaluation">Evaluation (F5)</div>
   </div>
+  <div class="view" id="view"></div>
+
   <div class="btnbar">
     <div class="mbtn">Exit <b>(F4)</b></div><div class="mbtn">Evaluation <b>(F5)</b></div>
     <div class="mbtn">Adjustment <b>(F6)</b></div><div class="mbtn">Login/Out <b>(F7)</b></div>
@@ -120,186 +100,332 @@
 <div class="hint" id="hint">Upload a machine PDF to begin.</div>
 
 <script>
-if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }
+if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }
 
-var DATA = {header:{},reference_holes:[],tabs:{}};
+var DATA={};
 
-/* ---------- helpers ---------- */
+/* helpers */
 function at(cells,x,tol){ tol=tol||14; var best=null,bd=999; cells.forEach(function(c){var d=Math.abs(c.x-x); if(d<=tol&&d<bd){bd=d;best=c;}}); return best?best.s:''; }
 function rnd(v){ var n=parseFloat(v); if(isNaN(n))return v; return (Math.round(n*100)/100).toString(); }
-function firstMatch(line,label,extra){
-  if(line.indexOf(label)===0){ var rest=line.substring(label.length).trim();
-    var re=extra||/^(-?[\d.]+|disabled|enabled|inactive|active)/; var m=rest.match(re); return m?m[1]:''; }
-  return null;
-}
+function esc(s){ return (s==null?'':(''+s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-/* ---------- parse page 1 (line-based) + page 2 (X-position) ---------- */
-function parseAll(p1lines, p2rows){
-  var d={header:{},reference_holes:[],tabs:{}};
+function parseAll(p1rows, p2rows, p3rows){
+  var d={header:{},settings:[],settings2:[],pbh:[],dist:[],bridges:[],idcomments:[],eval_kv:[],eval_rows:[],general:[],sensor:[],ac:[],barcode:[],project:[],sensorNames:["L1","AP-L1"]};
 
-  /* header title/number */
+  /* header */
+  var p1lines = p1rows.map(function(r){ return r.cells.map(function(c){return c.s;}).join(" | "); });
   var titleLine=p1lines[0]||"";
   var t=titleLine.split(" - ");
   d.header.number=t[0]?t[0].trim():"";
   var rawTitle=(t.length>1?t.slice(1).join(" - "):"");
-  rawTitle=rawTitle.replace(/\s*A\d+\b.*$/,"").trim();
-  rawTitle=rawTitle.replace(/\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/,"").trim();
+  var mm=rawTitle.match(/\b(A\d+)\b/); d.header.machine=mm?mm[1]:"";
+  rawTitle=rawTitle.replace(/\s*A\d+\b.*$/,"").trim().replace(/\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/,"").trim();
   d.header.title=rawTitle||"(no title)";
 
-  /* General parameter */
+  /* sensor names: detect the two column headers directly (Qx-L1 / Qx-AP-L1 / MCT-L1 etc.) */
+  var snFound=[];
+  p1lines.forEach(function(line){
+    var toks=line.split("|").map(function(s){return s.trim();});
+    toks.forEach(function(tk){
+      if(/^(Qx|MCT)-L\d+$/.test(tk) || /^(Qx|MCT)-AP-L\d+$/.test(tk)){
+        if(snFound.indexOf(tk)<0) snFound.push(tk);
+      }
+    });
+  });
+  if(snFound.length>=2) d.sensorNames=snFound.slice(0,2);
+  else if(snFound.length===1) d.sensorNames=[snFound[0],snFound[0]];
+
+  /* General parameter (left col of page1) */
   var genLabels=["Switch off value P1 (V)","Switch off value P2 (V)","No. of attenuators","Choice by robot","MCT sensor","DP: Max. number > 10V","Delay holes","Max. number of holes","Target range pulses P2 min.","Target range pulses P2 max.","Start at signal RS V","Amplification RS %","Focus distance control","Hole aperture"];
-  var gen=[];
-  p1lines.forEach(function(line){ genLabels.forEach(function(lb){ var v=firstMatch(line,lb); if(v!==null&&v!==""){gen.push([lb,v]);} }); });
-  gen.forEach(function(r){ if(r[0]==="Switch off value P1 (V)")d.header.switch_off_p1=r[1]; if(r[0]==="Switch off value P2 (V)")d.header.switch_off_p2=r[1]; if(r[0]==="No. of attenuators")d.header.attenuators=r[1]; });
-  if(gen.length)d.tabs.General={title:"General parameter",rows:gen};
+  p1rows.forEach(function(r){
+    var left = r.cells.filter(function(c){return c.x<170;});
+    if(left.length>=2){
+      var lbl=left[0].s, val=left[left.length-1].s;
+      genLabels.forEach(function(gl){
+        if(lbl===gl){ d.general.push([gl,val]);
+          if(gl==="Switch off value P1 (V)")d.header.switch_off_p1=val;
+          if(gl==="Switch off value P2 (V)")d.header.switch_off_p2=val;
+          if(gl==="No. of attenuators")d.header.attenuators=val;
+        }
+      });
+    }
+  });
 
-  /* Additional Cut */
+  /* Sensor adjustment (right col page1): label val1 val2 */
+  var saLabels=["Amplification WS %","Amplification RS %","Number of pulses","Power %","Frequency Hz","Duty cycle %","Channel 1 Nom. AS","Channel 2 Nom. AS","Channel 3 Nom. AS","Channel 4 Nom. AS","Sum Nom. AS","Tolerance +/-","Nom. WS/RS","Tolerance WS/RS"];
+  p1rows.forEach(function(r){
+    var lblCell=r.cells.filter(function(c){return c.x>=190&&c.x<320;});
+    var v1=at(r.cells,335,18), v2=at(r.cells,395,18);
+    if(lblCell.length){ var lb=lblCell[lblCell.length-1].s;
+      saLabels.forEach(function(sl){ if(lb===sl && v1!==""){ d.sensor.push([sl,v1,v2!==""?v2:v1]); } });
+    }
+  });
+
+  /* Additional Cut (left col, between 'Additional cut' and next section) */
   var acLabels=["Power %","Frequency Hz","Duty cycle %","On time ms","Off time ms","Start at signal reference sensor V","Amplification reference sensor %","Minimum number of sections","Target integral"];
-  var ac=[],inAC=false,seen={};
-  p1lines.forEach(function(line){ if(line.indexOf("Additional cut")===0){inAC=true;return;} if(line.indexOf("Barcode")===0){inAC=false;} if(inAC){ acLabels.forEach(function(lb){ if(!seen[lb]){var v=firstMatch(line,lb,/^(-?[\d.]+)/); if(v!==null&&v!==""){ac.push([lb,v]);seen[lb]=1;}} }); } });
-  if(ac.length)d.tabs.AC={title:"Additional Cut",rows:ac};
-
-  /* Sensor adjustment SH1 / SH2 */
-  var saLabels=["Amplification WS %","Amplification RS %","Number of pulses","Power %","Frequency Hz","Duty cycle %","Sum Nom. AS","Tolerance +/-","Nom. WS/RS","Tolerance WS/RS"];
-  var sh1=[],sh2=[];
-  p1lines.forEach(function(line){ saLabels.forEach(function(lb){ var idx=line.indexOf(lb); if(idx>0){ var rest=line.substring(idx+lb.length).trim(); var m=rest.match(/^(-?[\d.]+)\s+(-?[\d.]+)/); if(m){sh1.push([lb,m[1]]);sh2.push([lb,m[2]]);} } }); });
-  if(sh1.length)d.tabs.SH1={title:"Sensor adjustment — MCT-L1",rows:sh1};
-  if(sh2.length)d.tabs.SH2={title:"Sensor adjustment — MCT-AP-L1",rows:sh2};
-
-  /* Barcode */
-  var bc=[],inBC=false;
-  var bcMap={"Without":"Mode: Without","Print":"Print","Read":"Read","Read and print":"Read and print","Check barcode length":"Check barcode length","Barcode length":"Barcode length"};
-  p1lines.forEach(function(line){ if(line.indexOf("Barcode")===0){inBC=true;return;} if(inBC){ Object.keys(bcMap).forEach(function(k){ if(line.indexOf(k)===0){ var rest=line.substring(k.length).trim(); var m=rest.match(/^(enabled|disabled|active|inactive|[\d.]+)/); if(m)bc.push([bcMap[k],m[1]]); } }); } });
-  if(bc.length)d.tabs.Barcode={title:"Barcode",rows:bc};
-
-  /* ---- Page 2 via X-positions ---- */
-  var ref=[],pbh=[],dist=[],bridges=[],bridgeStart=false;
-  p2rows.forEach(function(r){
-    var cells=r.cells;
-    var txt=cells.map(function(c){return c.s;}).join(" ");
-    /* reference holes: id 0-9 at x19, distance decimal at x39 */
-    var id=at(cells,19,6), distc=at(cells,39,8);
-    if(/^[0-9]$/.test(id) && /^\d+\.\d$/.test(distc) && ref.length<10){
-      ref.push({id:id,dist:distc,amp:at(cells,80),p1:at(cells,121),pulses1:at(cells,203),
-        ctrl:(at(cells,244)==="enabled"?"ON":"OFF"),p2:at(cells,285),pulses2:at(cells,367),
-        load:(at(cells,408)==="enabled"?"ON":"OFF")});
-    }
-    /* PBH: id at x208, active disabled/enabled at x228 */
-    var pid=at(cells,208,8), pactive=at(cells,228,10);
-    if(/^[0-9]$/.test(pid) && (pactive==="disabled"||pactive==="enabled") && pbh.length<10){
-      pbh.push([pid,pactive,at(cells,269),at(cells,310),at(cells,351),at(cells,392),at(cells,433,12),at(cells,474,10)]);
-    }
-    /* Distance: id at x520, calc at x540 */
-    var did=at(cells,520,8), calc=at(cells,540,12);
-    if(/^[0-9]$/.test(did) && (calc==="enabled"||calc==="disabled") && dist.length<10){
-      dist.push([did,calc,rnd(at(cells,565,20)),at(cells,622,10),at(cells,663,10)]);
-    }
-    /* Bridges: after 'holes on/off' header, id@19 on@39 off@80 with no decimal */
-    if(/holes on/.test(txt)||/Number Number/.test(txt)){ bridgeStart=true; }
-    if(bridgeStart){
-      var bid=at(cells,19,6), on=at(cells,39,8), off=at(cells,80,8);
-      if(/^[0-9]$/.test(bid) && /^\d+$/.test(on) && /^\d+$/.test(off) && !(/^\d+\.\d$/.test(distc)) && bridges.length<10){
-        bridges.push([bid,on,off]);
+  var inAC=false,seen={};
+  p1rows.forEach(function(r){
+    var joined=r.cells.map(function(c){return c.s;}).join(" ");
+    if(joined.indexOf("Additional cut")===0){inAC=true;return;}
+    if(joined.indexOf("Barcode")===0){inAC=false;}
+    if(inAC){
+      var left=r.cells.filter(function(c){return c.x<170;});
+      if(left.length>=2){ var lb=left[0].s, val=left[left.length-1].s;
+        acLabels.forEach(function(al){ if(lb===al && !seen[al] && /^-?[\d.]+$/.test(val)){ d.ac.push([al,val]); seen[al]=1; } });
       }
     }
   });
-  if(ref.length)d.reference_holes=ref;
-  if(pbh.length)d.tabs.PBH={title:"PBH",table:{head:["ID","PBH active","Power %","DC %","Start after","End before","Ctrl power","Target"],rows:pbh}};
-  if(dist.length)d.tabs.Distance={title:"Distance",table:{head:["ID","Calc. active","Distance (mm)","V robot (mm/s)","Focus (mm)"],rows:dist}};
-  if(bridges.length)d.tabs.Bridges={title:"Bridges",table:{head:["ID","Holes on","Holes off"],rows:bridges}};
+
+  /* Project information (Company/Title/Worker/Material/Task/Optics/Robot/Information ID) */
+  var projLabels=["Company","Title","Worker","Material","Task","Optics/laser","Robot program","Information ID"];
+  p1rows.forEach(function(r){
+    var right=r.cells.filter(function(c){return c.x>=195;});
+    if(right.length){ var lb=right[0].s; var val=right.length>1?right[right.length-1].s:"—";
+      projLabels.forEach(function(pl){ if(lb===pl){ d.project.push([pl, (val===lb?"—":val)]); } });
+    }
+  });
+
+  /* Barcode */
+  var bcMode=["Without","Read","Print","Read and print"];
+  var bcPrinter=["Standard","Sato","Zebra/TSC","TSC (TCP/IP)"];
+  var bcFlags=["Check barcode length","Barcode length","Actual file"];
+  d.bc_mode=[]; d.bc_printer=[]; d.bc_flags=[];
+  var inBC=false;
+  p1rows.forEach(function(r){
+    var joined=r.cells.map(function(c){return c.s;}).join(" ");
+    if(joined.indexOf("Barcode")===0){inBC=true;}
+    if(inBC){
+      var left=r.cells.filter(function(c){return c.x<170;});
+      if(left.length){ var lb=left[0].s, val=left.length>1?left[left.length-1].s:"—"; if(val===lb)val="—";
+        bcMode.forEach(function(x){ if(lb===x)d.bc_mode.push([x,val]); });
+        bcPrinter.forEach(function(x){ if(lb===x)d.bc_printer.push([x,val]); });
+        bcFlags.forEach(function(x){ if(lb===x)d.bc_flags.push([x,val]); });
+      }
+    }
+  });
+  d.bc_const=[["Const. parameter 1","—"],["Const. parameter 2","—"],["Const. parameter 3","—"],["Const. parameter 4","—"],["Const. parameter 5","—"]];
+  d.bc_printing="—";
+
+  /* ID Comments (page1: pairs of ID number then comment, appear as standalone 0-9) */
+  /* handled by scanning for 'ID | Comments on ID' then digit rows - but they interleave with barcode; capture 0-9 as ids */
+  /* We'll just present ID 0-9 with any comment text if present */
+  var idc=[]; var idcSeen={};
+  p1rows.forEach(function(r){
+    var mid=r.cells.filter(function(c){return c.x>=195&&c.x<260;});
+    if(mid.length){ var v=mid[0].s;
+      if(/^[0-9]$/.test(v) && !idcSeen[v]){ var comment=mid.length>1?mid[mid.length-1].s:"—"; if(comment===v)comment="—"; idc.push([v,comment]); idcSeen[v]=1; }
+    }
+  });
+  if(!idc.length){ for(var n=0;n<=9;n++){ idc.push([n.toString(),"—"]); } }
+  idc.sort(function(a,b){return parseInt(a[0])-parseInt(b[0]);});
+  d.idcomments=idc;
+
+  /* ---------- PAGE 2 ---------- */
+  p2rows.forEach(function(r){
+    var c=r.cells;
+    var id=at(c,19,6), distc=at(c,39,8);
+    /* Settings F8 main table: id 0-9 at x19, decimal distance at x39, amplific at x80 */
+    if(/^[0-9]$/.test(id) && /^\d+\.\d$/.test(distc) && d.settings.length<10){
+      d.settings.push({id:id,dist:distc,amp:at(c,80),p1:at(c,121),dcp1:at(c,162),pulses1:at(c,203),
+        ctrl:at(c,244),p2:at(c,285),dcp2:at(c,326),pulses2:at(c,367),load:at(c,408),
+        usefile:at(c,449),shactive:at(c,490),numrh:at(c,531),distsh:at(c,572),numsh:at(c,613),
+        shpower:at(c,654),shdc:at(c,695),shpulses:at(c,736)});
+    }
+    /* Settings table 2: id@19, Control power SH@39(disabled/enabled), Target integral@80, Delay SH@121, Delay RH@162 -- BUT only when x39 is disabled/enabled (not decimal) AND there is PBH data on same row */
+    var s2ctrl=at(c,39,8);
+    if(/^[0-9]$/.test(id) && (s2ctrl==="disabled"||s2ctrl==="enabled") && d.settings2.length<10){
+      d.settings2.push([id,s2ctrl,at(c,80),at(c,121),at(c,162)]);
+    }
+    /* PBH: id@208, active@228 */
+    var pid=at(c,208,8), pactive=at(c,228,10);
+    if(/^[0-9]$/.test(pid) && (pactive==="disabled"||pactive==="enabled") && d.pbh.length<10){
+      d.pbh.push([pid,pactive,at(c,269),at(c,310),at(c,351),at(c,392),at(c,433,12),at(c,474,10)]);
+    }
+    /* Distance: id@520, calc@540 */
+    var did=at(c,520,8), calc=at(c,540,12);
+    if(/^[0-9]$/.test(did) && (calc==="enabled"||calc==="disabled") && d.dist.length<10){
+      d.dist.push([did,calc,rnd(at(c,581,20)),at(c,622,10),at(c,663,10)]);
+    }
+  });
+  /* Bridges: rows with only 3 cells id@19 on@39 off@80, appear after settings blocks (no decimal, no disabled) */
+  var pastBridgeHdr=false;
+  p2rows.forEach(function(r){
+    var c=r.cells;
+    var txt=c.map(function(x){return x.s;}).join(" ");
+    if(/holes on/.test(txt)) pastBridgeHdr=true;
+    if(pastBridgeHdr && c.length===3){
+      var id=at(c,19,6),on=at(c,39,8),off=at(c,80,8);
+      if(/^[0-9]$/.test(id) && /^\d+$/.test(on) && /^\d+$/.test(off) && d.bridges.length<10) d.bridges.push([id,on,off]);
+    }
+  });
+
+  /* ---------- PAGE 3 Evaluation ---------- */
+  /* Evaluation: X-position based. Left col: label@15 value@250. Right col: label@300 value@500. */
+  var inEval=false, evalTableStarted=false;
+  (p3rows||[]).forEach(function(r){
+    var joined=r.cells.map(function(c){return c.s;}).join(" ");
+    if(joined.indexOf("Evaluation (F5)")===0){inEval=true;return;}
+    if(!inEval) return;
+    /* once the per-ID table header appears, stop all kv capture */
+    if((/^ID\b/.test(joined) && /Max\./.test(joined)) || /Fault type/.test(joined)) { evalTableStarted=true; }
+    if(evalTableStarted) return;
+    /* left column pair */
+    var lLbl=r.cells.filter(function(c){return c.x<260;});
+    if(lLbl.length>=2){
+      var lb=lLbl[0].s, val=lLbl[lLbl.length-1].s;
+      if(lb!==val && /^(-?[\d.]+|active|inactive|enabled|disabled)$/.test(val)){ d.eval_kv.push([lb,val]); }
+    }
+    /* right column pair (label near x300, value near x500) */
+    var rLbl=r.cells.filter(function(c){return c.x>=290;});
+    if(rLbl.length>=2){
+      var rb=rLbl[0].s, rv=rLbl[rLbl.length-1].s;
+      if(rb!==rv && /^(-?[\d.]+|active|inactive|enabled|disabled)$/.test(rv)){ d.eval_kv.push([rb,rv]); }
+    }
+  });
+  /* Evaluation per-ID table: id@19 + 6 numbers */
+  (p3rows||[]).forEach(function(r){
+    var id=at(r.cells,19,6);
+    var nums=r.cells.filter(function(c){return c.x>40;}).map(function(c){return c.s;}).filter(function(s){return /^-?\d+$/.test(s);});
+    if(/^[0-9]$/.test(id) && nums.length>=6 && d.eval_rows.length<10){
+      d.eval_rows.push([id].concat(nums.slice(0,6)));
+    }
+  });
 
   return d;
 }
 
-/* ---------- read the PDF ---------- */
-async function readPages(buf){
-  var pdf = await pdfjsLib.getDocument({data:buf}).promise;
-  var p1lines=[], p2rows=[];
+/* read PDF: page1 & page3 as lines (cells joined with |), page2 as x-cells */
+async function readPDF(buf){
+  var pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  var p1=[],p3=[],p2rows=[];
   for(var i=1;i<=pdf.numPages;i++){
-    var page=await pdf.getPage(i);
-    var tc=await page.getTextContent();
-    var items=tc.items.map(function(it){ return {s:it.str.trim(), x:Math.round(it.transform[4]), y:Math.round(it.transform[5])}; }).filter(function(it){return it.s!=="";});
-    var byY={}; items.forEach(function(it){ (byY[it.y]=byY[it.y]||[]).push(it); });
+    var page=await pdf.getPage(i); var tc=await page.getTextContent();
+    var items=tc.items.map(function(it){return {s:it.str.trim(),x:Math.round(it.transform[4]),y:Math.round(it.transform[5])};}).filter(function(it){return it.s!=="";});
+    var byY={}; items.forEach(function(it){(byY[it.y]=byY[it.y]||[]).push(it);});
     var ys=Object.keys(byY).map(Number).sort(function(a,b){return b-a;});
-    if(i===1){
-      p1lines = ys.map(function(y){ return byY[y].sort(function(a,b){return a.x-b.x;}).map(function(it){return it.s;}).join(" ").replace(/\s+/g," ").trim(); });
-    }
-    if(i===2){
-      p2rows = ys.map(function(y){ return {y:y, cells:byY[y].sort(function(a,b){return a.x-b.x;})}; });
-    }
+    if(i===1)p1=ys.map(function(y){return {y:y,cells:byY[y].sort(function(a,b){return a.x-b.x;})};});
+    if(i===2)p2rows=ys.map(function(y){return {y:y,cells:byY[y].sort(function(a,b){return a.x-b.x;})};});
+    if(i===3)p3=ys.map(function(y){return {y:y,cells:byY[y].sort(function(a,b){return a.x-b.x;})};});
   }
-  return {p1lines:p1lines, p2rows:p2rows};
+  return {p1:p1,p2rows:p2rows,p3:p3};
 }
 
 async function handlePDF(file){
-  setStatus("Reading "+file.name+" …");
-  try{
-    var buf=await file.arrayBuffer();
-    var pg=await readPages(buf);
-    var parsed=parseAll(pg.p1lines, pg.p2rows);
-    if(!parsed.reference_holes.length && !parsed.tabs.General){ setStatus("Could not read this PDF's layout. Is it a machine data-record export?"); return; }
-    DATA=parsed; renderAll(); activateTab('AC');
-    setStatus("Loaded: "+file.name);
-    document.getElementById('hint').textContent="Showing values from "+file.name;
-  }catch(e){ setStatus("Error reading PDF: "+e.message); }
+  var buf=await file.arrayBuffer();
+  await processBuffer(buf, file.name);
 }
 function setStatus(t){ document.getElementById('upStatus').textContent=t; }
 
-/* ---------- render ---------- */
+/* render */
 function renderHeader(){
-  var hd=DATA.header||{};
-  document.getElementById('dr_title').textContent=hd.title||"—";
-  document.getElementById('dr_number').textContent=hd.number||"—";
-  document.getElementById('so_p1').textContent=hd.switch_off_p1||"—";
-  document.getElementById('so_p2').textContent=hd.switch_off_p2||"—";
-  document.getElementById('attn').textContent=hd.attenuators||"—";
+  var h=DATA.header||{};
+  document.getElementById('dr_title').textContent=h.title||"—";
+  document.getElementById('dr_number').textContent=h.number||"—";
+  document.getElementById('dr_machine').textContent=h.machine||"—";
+  document.getElementById('so_p1').textContent=h.switch_off_p1||"—";
+  document.getElementById('so_p2').textContent=h.switch_off_p2||"—";
+  document.getElementById('attn').textContent=h.attenuators||"—";
 }
-function renderRefHoles(){
-  var b=document.getElementById('rh_body'); b.innerHTML='';
-  (DATA.reference_holes||[]).forEach(function(r){
-    var ctrl=r.ctrl==='ON'?"<span class='onpill'>ON</span>":"<span class='offpill'>OFF</span>";
-    var load=r.load==='ON'?"<span class='onpill'>ON</span>":"<span class='offpill'>OFF</span>";
-    b.innerHTML+="<tr><td class='idcell'>"+r.id+"</td>"+
-      "<td><span class='box'>"+r.dist+"</span></td><td><span class='box'>"+r.amp+"</span></td>"+
-      "<td><span class='box'>"+r.p1+"</span></td><td><span class='box'>"+r.pulses1+"</span></td>"+
-      "<td>"+ctrl+"</td><td><span class='box'>"+r.p2+"</span></td>"+
-      "<td><span class='box'>"+r.pulses2+"</span></td><td>"+load+"</td></tr>";
-  });
+function kvFrame(title,rows){
+  if(!rows||!rows.length) return "<div class='frame'><div class='frame-title'>"+title+"</div><div class='empty'>No data.</div></div>";
+  var h="<div class='frame'><div class='frame-title'>"+title+"</div><table class='g kvtable'>";
+  rows.forEach(function(r){ h+="<tr><td class='lbl'>"+esc(r[0])+"</td><td class='val'>"+esc(r[1])+"</td></tr>"; });
+  return h+"</table></div>";
 }
-function renderTab(name){
-  var t=(DATA.tabs||{})[name]; var p=document.getElementById('panel');
-  if(!t){ p.innerHTML="<div class='panel-h'>"+name+"</div><div style='color:#667;font-size:12px;'>No data for this tab in this record.</div>"; return; }
-  var html="<div class='panel-h'>"+t.title+"</div>";
-  if(t.rows){
-    if(t.rows.length>8){
-      var half=Math.ceil(t.rows.length/2);
-      html+="<div class='twocol'><div>";
-      t.rows.slice(0,half).forEach(function(r){ html+="<div class='kv'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>"; });
-      html+="</div><div>";
-      t.rows.slice(half).forEach(function(r){ html+="<div class='kv'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>"; });
-      html+="</div></div>";
-    } else { t.rows.forEach(function(r){ html+="<div class='kv'><span class='k'>"+r[0]+"</span><span class='v'>"+r[1]+"</span></div>"; }); }
-  } else if(t.table){
-    var cols=t.table.head.length;
-    html+="<div class='sub-grid' style='grid-template-columns:repeat("+cols+",1fr);'>";
-    t.table.head.forEach(function(h){ html+="<div class='h'>"+h+"</div>"; });
-    t.table.rows.forEach(function(row){ row.forEach(function(c,i){ html+="<div class='"+(i===0?'lbl':'c')+"'>"+c+"</div>"; }); });
-    html+="</div>";
+function tblFrame(title,head,rows){
+  if(!rows||!rows.length) return "<div class='frame'><div class='frame-title'>"+title+"</div><div class='empty'>No data.</div></div>";
+  var h="<div class='frame'><div class='frame-title'>"+title+"</div><div class='scroll'><table class='g'><tr>";
+  head.forEach(function(x){ h+="<th>"+esc(x)+"</th>"; });
+  h+="</tr>";
+  rows.forEach(function(row){ h+="<tr>"; row.forEach(function(c,i){ h+="<td class='"+(i===0?'idcell':'num')+"'>"+esc(c)+"</td>"; }); h+="</tr>"; });
+  return h+"</table></div></div>";
+}
+function activateMain(tab){
+  document.querySelectorAll('.mtab').forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-tab')===tab); });
+  var v=document.getElementById('view'); var h="";
+  if(tab==='general'){ h=kvFrame("General Parameter", DATA.general); }
+  else if(tab==='sensor'){
+    var head=["Parameter",(DATA.sensorNames&&DATA.sensorNames[0])||"L1",(DATA.sensorNames&&DATA.sensorNames[1])||"AP-L1"];
+    h=tblFrame("Sensor Adjustment", head, DATA.sensor);
   }
-  p.innerHTML=html;
+  else if(tab==='settings'){
+    h=tblFrame("Settings (F8)",
+      ["ID","Distance (ms)","Amplific. WS %","Power P1 %","DC P1 %","Pulses P1","Ctrl","Power P2 %","DC P2 %","Pulses P2","Load new","Use file","SH active","Number RH","Dist SH% to RH","Number SH","SH Power %","SH DC %","SH No. pulses"],
+      DATA.settings.map(function(s){return [s.id,s.dist,s.amp,s.p1,s.dcp1,s.pulses1,s.ctrl,s.p2,s.dcp2,s.pulses2,s.load,s.usefile,s.shactive,s.numrh,s.distsh,s.numsh,s.shpower,s.shdc,s.shpulses];}));
+    h+=tblFrame("Settings — SH Control", ["ID","Control power SH","Target integral","Delay SH (ms)","Delay RH (ms)"], DATA.settings2);
+  }
+  else if(tab==='pbh'){
+    h=tblFrame("PBH", ["ID","PBH active","Power %","DC %","Start after (ms)","End before (ms)","Ctrl power PBH","Target integral"], DATA.pbh);
+    h+="<div class='two'>";
+    h+=tblFrame("Bridges", ["ID","Number holes on","Number holes off"], DATA.bridges);
+    h+=tblFrame("Distance", ["ID","Calc. active","Distance (mm)","V robot (mm/s)","Focus (mm)"], DATA.dist);
+    h+="</div>";
+  }
+  else if(tab==='ac'){ h=kvFrame("Additional Cut", DATA.ac); }
+  else if(tab==='project'){ h=kvFrame("Project Information", DATA.project); }
+  else if(tab==='barcode'){
+    h=kvFrame("Mode", DATA.bc_mode);
+    h+=kvFrame("Printer Type", DATA.bc_printer);
+    h+=kvFrame("Barcode Settings", DATA.bc_flags);
+    h+=kvFrame("Constant Parameters (screen only — not in PDF)", DATA.bc_const);
+  }
+  else if(tab==='idcomments'){ h=tblFrame("ID Comments", ["ID","Comments on ID"], DATA.idcomments); }
+  else if(tab==='evaluation'){
+    h=kvFrame("Evaluation (F5)", DATA.eval_kv);
+    h+=tblFrame("Evaluation per ID", ["ID","Max. number","Min. OK holes","Max. no. in row","Max. number","Min. OK holes","Max. no. in row"], DATA.eval_rows);
+  }
+  v.innerHTML=h||"<div class='empty'>No data.</div>";
 }
-function activateTab(name){
-  var tabs=document.querySelectorAll('.tab');
-  tabs.forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-tab')===name); });
-  renderTab(name);
+function initTabs(){ document.querySelectorAll('.mtab').forEach(function(tb){ tb.addEventListener('click',function(){ activateMain(tb.getAttribute('data-tab')); }); }); }
+
+document.getElementById('uploadBtn').addEventListener('click',function(){ document.getElementById('pdfInput').click(); });
+document.getElementById('pdfInput').addEventListener('change',function(e){ if(e.target.files[0]) handlePDF(e.target.files[0]); });
+
+/* ---------- process an ArrayBuffer (shared by upload + auto-load) ---------- */
+async function processBuffer(buf, sourceName){
+  setStatus("Reading "+sourceName+" …");
+  try{
+    var pg=await readPDF(buf);
+    DATA=parseAll(pg.p1,pg.p2rows,pg.p3);
+    renderHeader(); activateMain('general');
+    setStatus("Loaded: "+sourceName);
+    document.getElementById('hint').textContent="Showing values from "+sourceName;
+  }catch(e){ setStatus("Error: "+e.message); }
 }
-function renderAll(){ renderHeader(); renderRefHoles(); }
-function initTabs(){ document.querySelectorAll('.tab').forEach(function(tb){ tb.addEventListener('click',function(){ activateTab(tb.getAttribute('data-tab')); }); }); }
 
-document.getElementById('uploadBtn').addEventListener('click', function(){ document.getElementById('pdfInput').click(); });
-document.getElementById('pdfInput').addEventListener('change', function(e){ if(e.target.files[0]) handlePDF(e.target.files[0]); });
+/* ---------- AUTO-LOAD from a Log record via ?recId= ---------- */
+var APP_OWNER="sarathynds_saryam", APP_NAME="jenoptik-logs";
+var PDF_FIELD="Machine_Data_Record", REPORT_NAME="Log_Report";
 
-renderAll(); activateTab('AC'); initTabs();
+async function autoLoadRecord(recId){
+  setStatus("Fetching record "+recId+" …");
+  try{
+    /* 1) get the record JSON to find the PDF file path */
+    var recUrl="https://creatorapp.zoho.com/api/v2.1/"+APP_OWNER+"/"+APP_NAME+"/report/"+REPORT_NAME+"/"+recId;
+    var recResp=await fetch(recUrl,{headers:{"Accept":"application/json"}});
+    if(!recResp.ok){ setStatus("Could not read record ("+recResp.status+"). Use Upload instead."); return; }
+    var recJson=await recResp.json();
+    var data=recJson.data||recJson;
+    var filePath=data[PDF_FIELD];
+    if(!filePath){ setStatus("No PDF in this record's "+PDF_FIELD+" field. Use Upload."); return; }
+    /* 2) fetch the actual PDF bytes */
+    var pdfUrl = filePath.indexOf("http")===0 ? filePath : ("https://creatorapp.zoho.com"+filePath);
+    var pdfResp=await fetch(pdfUrl);
+    if(!pdfResp.ok){ setStatus("Could not download the PDF ("+pdfResp.status+"). Use Upload."); return; }
+    var buf=await pdfResp.arrayBuffer();
+    await processBuffer(buf, "record "+recId);
+  }catch(e){
+    setStatus("Auto-load blocked (likely CORS). Use the Upload button. ["+e.message+"]");
+  }
+}
+
+initTabs();
+(function(){
+  var params=new URLSearchParams(location.search);
+  var recId=params.get('recId');
+  if(recId){ autoLoadRecord(recId); }
+  else { document.getElementById('view').innerHTML="<div class='empty'>Upload a machine PDF to see its values.</div>"; }
+})();
 </script>
 </body>
 </html>
