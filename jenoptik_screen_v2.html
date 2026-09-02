@@ -117,6 +117,7 @@
 <script>
 if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }
 var DATA={header:{},settings:[],settings2:[],pbh:[],dist:[],bridges:[],idcomments:[],eval_kv:[],eval_rows:[],general:[],sensor:[],ac:[],barcode:[],project:[],sensorNames:["L1","AP-L1"]};
+function setStatus(t){ var el=document.getElementById("upStatus"); if(el) el.textContent=t; }
 function at(cells,x,tol){ tol=tol||14; var best=null,bd=999; cells.forEach(function(c){var d=Math.abs(c.x-x); if(d<=tol&&d<bd){bd=d;best=c;}}); return best?best.s:''; }
 function rnd(v){ var n=parseFloat(v); if(isNaN(n))return v; return (Math.round(n*100)/100).toString(); }
 function esc(s){ return (s==null?'':(''+s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -124,6 +125,7 @@ function esc(s){ return (s==null?'':(''+s)).replace(/&/g,'&amp;').replace(/</g,'
 
 function parseAll(p1rows, p2rows, p3rows){
   var d={header:{},settings:[],settings2:[],pbh:[],dist:[],bridges:[],idcomments:[],eval_kv:[],eval_rows:[],general:[],sensor:[],ac:[],barcode:[],project:[],sensorNames:["L1","AP-L1"]};
+function setStatus(t){ var el=document.getElementById("upStatus"); if(el) el.textContent=t; }
 
   /* header */
   var p1lines = p1rows.map(function(r){ return r.cells.map(function(c){return c.s;}).join(" | "); });
