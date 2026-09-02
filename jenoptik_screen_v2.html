@@ -138,7 +138,6 @@ function esc(s){ return (s==null?'':(''+s)).replace(/&/g,'&amp;').replace(/</g,'
 
 function parseAll(p1rows, p2rows, p3rows){
   var d={header:{},settings:[],settings2:[],pbh:[],dist:[],bridges:[],idcomments:[],eval_kv:[],eval_rows:[],general:[],sensor:[],ac:[],barcode:[],project:[],sensorNames:["L1","AP-L1"]};
-function setStatus(t){ var el=document.getElementById("upStatus"); if(el) el.textContent=t; }
 
   /* header */
   var p1lines = p1rows.map(function(r){ return r.cells.map(function(c){return c.s;}).join(" | "); });
@@ -508,9 +507,12 @@ var fs1=document.getElementById('fkey_settings'); if(fs1)fs1.addEventListener('c
 var fe1=document.getElementById('fkey_eval'); if(fe1)fe1.addEventListener('click',function(){showSecondary('eval');});
 var fp1=document.getElementById('fkey_project'); if(fp1)fp1.addEventListener('click',function(){showSecondary('project');});
 
+var MACHINE_ID = "";
 (function(){
   var params=new URLSearchParams(location.search);
   var recId=params.get('recId');
+  MACHINE_ID = params.get('machineId') || "";
+  if(MACHINE_ID){ setStatus("Machine record: " + MACHINE_ID + " — upload a PDF, then Save."); }
   if(recId){ autoLoadRecord(recId); }
 })();
 </script>
