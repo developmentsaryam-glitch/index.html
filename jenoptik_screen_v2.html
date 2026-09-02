@@ -57,6 +57,21 @@
   .empty{color:#667;font-size:12px;padding:14px;}
   .hint{max-width:1240px;margin:9px auto 0;color:#cfd6dd;font-size:12px;}
   @media(max-width:860px){.body{grid-template-columns:1fr;}}
+
+  .bc-panel{font-size:11px;}
+  .bc-group{border:1px solid var(--line);border-radius:3px;margin-bottom:9px;position:relative;padding:8px 10px 10px;}
+  .bc-group>.bc-legend{position:absolute;top:-8px;left:8px;background:var(--panel);padding:0 5px;font-size:10px;font-weight:700;color:var(--ink-soft);}
+  .bc-row{display:flex;align-items:center;gap:8px;padding:3px 0;}
+  .bc-radio{width:12px;height:12px;border:1px solid #555;border-radius:50%;display:inline-block;position:relative;flex-shrink:0;background:#fff;}
+  .bc-radio.on:after{content:'';position:absolute;top:2px;left:2px;width:6px;height:6px;border-radius:50%;background:#1b1f24;}
+  .bc-lab{color:var(--ink-soft);}
+  .bc-flag{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:2px;}
+  .bc-flag.on{background:var(--green);color:#08300c;} .bc-flag.off{background:#aeb4ba;color:#333;}
+  .bc-two{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+  .bc-field{background:var(--field);border:1px solid var(--fb);border-radius:2px;padding:2px 7px;font-size:10.5px;min-width:60px;flex:1;}
+  .bc-file{font-size:10.5px;color:#20303a;margin-top:4px;word-break:break-all;}
+  .bc-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap;}
+  .bc-btn{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:5px 12px;font-size:10.5px;color:var(--ink-soft);}
 </style>
 </head>
 <body>
@@ -99,9 +114,7 @@
         <div class="tab" data-tab="Distance">Distance</div>
         <div class="tab active" data-tab="AC">AC</div>
         <div class="tab" data-tab="Barcode">Barcode</div>
-        <div class="tab" data-tab="Settings">Settings</div>
-        <div class="tab" data-tab="Project">Project</div>
-        <div class="tab" data-tab="Eval">Evaluation</div>
+        <div class="tab" data-tab="Help">?</div>
       </div>
       <div class="panel-body" id="panel"><div class="empty">Upload a machine PDF to see its values.</div></div>
     </div>
@@ -109,8 +122,8 @@
   <div class="btnbar">
     <div class="mbtn">Exit <b>(F4)</b></div><div class="mbtn">Evaluation <b>(F5)</b></div>
     <div class="mbtn">Adjustment <b>(F6)</b></div><div class="mbtn">Login/Out <b>(F7)</b></div>
-    <div class="mbtn">Settings <b>(F8)</b></div><div class="mbtn">Options <b>(F9)</b></div>
-    <div class="mbtn">Errors <b>(F10)</b></div><div class="mbtn">Graph</div>
+    <div class="mbtn" id="fkey_settings" style="cursor:pointer;">Settings <b>(F8)</b></div><div class="mbtn" id="fkey_eval" style="cursor:pointer;">Evaluation <b>(F5)</b></div>
+    <div class="mbtn" id="fkey_project" style="cursor:pointer;">Project <b>(F9)</b></div><div class="mbtn">Graph</div>
   </div>
 </div>
 <div class="hint" id="hint">Upload a machine PDF to begin.</div>
@@ -368,7 +381,8 @@ async function autoLoadRecord(recId){
 /* ---------- RENDER (machine-photo layout: left table + right tabs) ---------- */
 function renderHeader(){
   var h=DATA.header||{};
-  document.getElementById('dr_title').textContent=h.title||"—";
+  var ttl=(h.title||"—").replace(/\s*\|\s*$/,"").replace(/\|/g," ").trim();
+  document.getElementById('dr_title').textContent=ttl||"—";
   document.getElementById('dr_number').textContent=h.number||"—";
   document.getElementById('so_p1').textContent=h.switch_off_p1||"—";
   document.getElementById('so_p2').textContent=h.switch_off_p2||"—";
@@ -416,11 +430,9 @@ function renderTab(name){
     h+=tblBlock("SH Control", ["ID","Ctrl power SH","Target integral","Delay SH","Delay RH"], DATA.settings2);
   }
   else if(name==='Barcode'){
-    h="<div class='panel-h'>Barcode</div>";
-    h+=kvBlock("Mode", DATA.bc_mode); h+=kvBlock("Printer Type", DATA.bc_printer);
-    h+=kvBlock("Barcode Settings", DATA.bc_flags);
-    h+=kvBlock("Constant Parameters (screen only)", DATA.bc_const);
+    h=renderBarcode();
   }
+  else if(name==='Help'){ h="<div class='panel-h'>Help</div><div class='empty'>Machine help screen.</div>"; }
   else if(name==='Project'){
     h="<div class='panel-h'>Project Information</div>"+kvBlock("Project", DATA.project)+tblBlock("ID Comments", ["ID","Comments on ID"], DATA.idcomments);
   }
@@ -437,12 +449,65 @@ function activateTab(name){
 function renderAll(){ renderHeader(); renderRefHoles(); activateTab('AC'); }
 function initTabs(){ document.querySelectorAll('.tab').forEach(function(tb){ tb.addEventListener('click',function(){ activateTab(tb.getAttribute('data-tab')); }); }); }
 
+
+function bcVal(arr,key){ if(!arr)return ""; for(var i=0;i<arr.length;i++){ if(arr[i][0]===key)return arr[i][1]; } return ""; }
+function isOn(v){ return v==="enabled"||v==="active"||v==="on"||v==="ON"; }
+function renderBarcode(){
+  var mode=DATA.bc_mode||[], printer=DATA.bc_printer||[], flags=DATA.bc_flags||[], konst=DATA.bc_const||[];
+  var modeOpts=["Without","Read","Print","Read and print"];
+  var h="<div class='panel-h'>Barcode</div><div class='bc-panel'>";
+  /* Mode + Printer type side by side */
+  h+="<div class='bc-two'>";
+  h+="<div class='bc-group'><span class='bc-legend'>Mode</span>";
+  modeOpts.forEach(function(m){ var on=isOn(bcVal(mode,m)); h+="<div class='bc-row'><span class='bc-radio"+(on?" on":"")+"'></span><span class='bc-lab'>"+m+"</span></div>"; });
+  var chk=bcVal(flags,"Check barcode length"), blen=bcVal(flags,"Barcode length");
+  h+="<div class='bc-row'><span class='bc-flag "+(isOn(chk)?"on":"off")+"'>"+(isOn(chk)?"ON":"OFF")+"</span><span class='bc-lab'>Check barcode length:</span><span class='bc-field'>"+esc(blen||"0")+"</span></div>";
+  h+="</div>";
+  h+="<div class='bc-group'><span class='bc-legend'>Printer type</span>";
+  printer.forEach(function(p){ var on=isOn(p[1]); h+="<div class='bc-row'><span class='bc-radio"+(on?" on":"")+"'></span><span class='bc-lab'>"+esc(p[0])+"</span></div>"; });
+  h+="</div></div>";
+  /* Barcode file */
+  var actual=bcVal(flags,"Actual file"); if(actual==="—")actual="";
+  h+="<div class='bc-group'><span class='bc-legend'>Barcode file</span>";
+  h+="<div class='bc-row'><span class='bc-flag off'>OFF</span><span class='bc-lab'>Standard</span><span style='flex:1;'></span><span class='bc-flag on'>ON</span><span class='bc-lab'>Barcode printing v2.0</span></div>";
+  h+="<div class='bc-file'>Actual file: "+(esc(actual)||"—")+"</div>";
+  h+="</div>";
+  /* Constant parameters */
+  h+="<div class='bc-group'><span class='bc-legend'>Constant parameters</span>";
+  konst.forEach(function(k){ h+="<div class='bc-row'><span class='bc-lab' style='min-width:130px;'>"+esc(k[0])+"</span><span class='bc-field'>"+(k[1]==="—"?"":esc(k[1]))+"</span></div>"; });
+  h+="<div class='bc-btns'><span class='bc-btn'>Print example</span><span class='bc-btn'>Print last barcode</span></div>";
+  h+="</div>";
+  h+="</div>";
+  return h;
+}
+/* F-key secondary screens (Settings, Evaluation, Project) shown in the right panel */
+function showSecondary(kind){
+  var p=document.getElementById('panel'); var h="";
+  if(kind==='settings'){
+    h="<div class='panel-h'>Settings (F8)</div>";
+    h+=tblBlock("Settings", ["ID","Dist","WS%","P1%","DCP1","Pul1","Ctrl","P2%","DCP2","Pul2","Load","UseF","SHact","NumRH","DstSH","NumSH","SHP%","SHDC","SHpul"],
+      (DATA.settings||[]).map(function(s){return [s.id,s.dist,s.amp,s.p1,s.dcp1,s.pulses1,s.ctrl,s.p2,s.dcp2,s.pulses2,s.load,s.usefile,s.shactive,s.numrh,s.distsh,s.numsh,s.shpower,s.shdc,s.shpulses];}));
+    h+=tblBlock("SH Control", ["ID","Ctrl power SH","Target integral","Delay SH","Delay RH"], DATA.settings2);
+  } else if(kind==='eval'){
+    h="<div class='panel-h'>Evaluation (F5)</div>"+kvBlock("Evaluation", DATA.eval_kv)+tblBlock("Per-ID", ["ID","Max","MinOK","MaxRow","Max","MinOK","MaxRow"], DATA.eval_rows);
+  } else if(kind==='project'){
+    h="<div class='panel-h'>Project Information</div>"+kvBlock("Project", DATA.project)+tblBlock("ID Comments", ["ID","Comments on ID"], DATA.idcomments);
+  }
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+  p.innerHTML=h;
+}
+
 document.getElementById('uploadBtn').addEventListener('click',function(){ document.getElementById('pdfInput').click(); });
 document.getElementById('pdfInput').addEventListener('change',function(e){ if(e.target.files[0]) handlePDF(e.target.files[0]); });
 
 async function handlePDF(file){ var buf=await file.arrayBuffer(); await processBuffer(buf, file.name); }
 
 initTabs();
+
+var fs1=document.getElementById('fkey_settings'); if(fs1)fs1.addEventListener('click',function(){showSecondary('settings');});
+var fe1=document.getElementById('fkey_eval'); if(fe1)fe1.addEventListener('click',function(){showSecondary('eval');});
+var fp1=document.getElementById('fkey_project'); if(fp1)fp1.addEventListener('click',function(){showSecondary('project');});
+
 (function(){
   var params=new URLSearchParams(location.search);
   var recId=params.get('recId');
