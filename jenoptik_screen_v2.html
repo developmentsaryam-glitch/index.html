@@ -77,6 +77,7 @@
 <body>
 <div class="toolbar">
   <button class="up-btn" id="uploadBtn">Upload machine PDF</button>
+  <button class="up-btn" id="saveBtn" style="background:#16803c;display:none;">Save Configuration</button>
   <input type="file" id="pdfInput" accept="application/pdf">
   <span class="up-status" id="upStatus">Upload a machine data-record PDF to load its values.</span>
 </div>
@@ -339,13 +340,16 @@ async function readPDF(buf){
 
 
 /* ---------- process an ArrayBuffer (shared by upload + auto-load) ---------- */
+var PDF_LOADED=false;
 async function processBuffer(buf, sourceName){
   setStatus("Reading "+sourceName+" …");
   try{
     var pg=await readPDF(buf);
     DATA=parseAll(pg.p1,pg.p2rows,pg.p3);
     renderAll();
-    setStatus("Loaded: "+sourceName);
+    PDF_LOADED=true;
+    var sb=document.getElementById('saveBtn'); if(sb) sb.style.display='inline-block';
+    setStatus("Loaded: "+sourceName+(MACHINE_ID?"  — click Save Configuration to store it.":""));
     document.getElementById('hint').textContent="Showing values from "+sourceName;
   }catch(e){ setStatus("Error: "+e.message); }
 }
@@ -508,6 +512,47 @@ var fe1=document.getElementById('fkey_eval'); if(fe1)fe1.addEventListener('click
 var fp1=document.getElementById('fkey_project'); if(fp1)fp1.addEventListener('click',function(){showSecondary('project');});
 
 var MACHINE_ID = "";
+
+/* ---------- STAGE 3: gather all parsed values into one JSON snapshot ---------- */
+function buildConfigJSON(){
+  var cfg = {
+    title: (DATA.header&&DATA.header.title)||"",
+    number: (DATA.header&&DATA.header.number)||"",
+    machine: (DATA.header&&DATA.header.machine)||"",
+    switch_off_p1: (DATA.header&&DATA.header.switch_off_p1)||"",
+    switch_off_p2: (DATA.header&&DATA.header.switch_off_p2)||"",
+    attenuators: (DATA.header&&DATA.header.attenuators)||"",
+    sensorNames: DATA.sensorNames||[],
+    general: DATA.general||[],
+    sensor: DATA.sensor||[],
+    additional_cut: DATA.ac||[],
+    reference_holes: DATA.settings||[],
+    settings_sh_control: DATA.settings2||[],
+    pbh: DATA.pbh||[],
+    bridges: DATA.bridges||[],
+    distance: DATA.dist||[],
+    barcode_mode: DATA.bc_mode||[],
+    barcode_printer: DATA.bc_printer||[],
+    barcode_flags: DATA.bc_flags||[],
+    project: DATA.project||[],
+    id_comments: DATA.idcomments||[],
+    evaluation: DATA.eval_kv||[],
+    evaluation_rows: DATA.eval_rows||[]
+  };
+  return JSON.stringify(cfg);
+}
+
+function onSaveClick(){
+  if(!PDF_LOADED){ setStatus("Load a PDF first, then Save."); return; }
+  if(!MACHINE_ID){ setStatus("No machine ID. Open this viewer from a Machine record."); return; }
+  var json = buildConfigJSON();
+  /* Stage 3: just confirm we gathered it. Stage 4 will send this to Creator. */
+  setStatus("Configuration ready for machine " + MACHINE_ID + " (" + json.length + " chars). [Save-to-Creator comes next]");
+  document.getElementById('hint').textContent = "Gathered " + json.length + " characters of config for machine " + MACHINE_ID + ".";
+  console.log("CONFIG_JSON for machine", MACHINE_ID, json);
+}
+var _sb=document.getElementById('saveBtn'); if(_sb) _sb.addEventListener('click', onSaveClick);
+
 (function(){
   var params=new URLSearchParams(location.search);
   var recId=params.get('recId');
