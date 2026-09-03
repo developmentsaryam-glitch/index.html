@@ -420,7 +420,31 @@ function tblBlock(title,head,rows){
 }
 function renderTab(name){
   var p=document.getElementById('panel'); var h="";
-  if(name==='General'){ h="<div class='panel-h'>General parameter</div>"+kvBlock("General Parameter", DATA.general); }
+  if(name==='General'){
+    h="<div class='panel-h'>General</div>";
+    /* per-hole DC P1 / DC P2 / Use file from settings */
+    h+=tblBlock("Per hole", ["ID","DC P1 %","DC P2 %","Use file"],
+      (DATA.settings||[]).map(function(s){return [s.id,s.dcp1,s.dcp2,s.usefile];}));
+    /* toggles + limits pulled from the General parameter block */
+    function gv(k){ var a=DATA.general||[]; for(var i=0;i<a.length;i++){ if(a[i][0]===k) return a[i][1]; } return "—"; }
+    var toggles=[
+      ["MCT sensor active", gv("MCT sensor")],
+      ["Hole aperture active", gv("Hole aperture")],
+      ["Focus distance control active", gv("Focus distance control")]
+    ];
+    h+=kvBlock("Settings", toggles);
+    var limits=[
+      ["Max. number of holes", gv("Max. number of holes")],
+      ["Delay holes", gv("Delay holes")],
+      ["Software destroy protection (max. holes in a row, WS>10V)", gv("DP: Max. number > 10V")]
+    ];
+    h+=kvBlock("Limits", limits);
+    var cp=[
+      ["Target range pulses P2 min.", gv("Target range pulses P2 min.")],
+      ["Target range pulses P2 max.", gv("Target range pulses P2 max.")]
+    ];
+    h+=kvBlock("Control pulses P1", cp);
+  }
   else if(name==='SH1'){
     h="<div class='panel-h'>SH 1 — per hole (from Settings F8)</div>";
     h+=tblBlock("SH per hole", ["ID","SH active","Number RH","Dist SH% to RH","Number SH","SH Power %","SH DC %","SH No. pulses"],
@@ -558,14 +582,33 @@ function buildConfigJSON(){
   return JSON.stringify(cfg);
 }
 
-function onSaveClick(){
+/* ---------- STAGE 4: save config JSON to Machine Master via published Creator API ---------- */
+var SAVE_API = "https://www.zohoapis.com/creator/custom/sarathynds_saryam/Save_Machine_Config?publickey=zWFCsZX1rOnAGn0bBQW11HY0Q";
+async function onSaveClick(){
   if(!PDF_LOADED){ setStatus("Load a PDF first, then Save."); return; }
-  if(!MACHINE_ID){ setStatus("No machine ID. Open this viewer from a Machine record."); return; }
+  if(!MACHINE_ID){ setStatus("No machine name. Open this viewer with ?machineId=<Machine Name>."); return; }
   var json = buildConfigJSON();
-  /* Stage 3: just confirm we gathered it. Stage 4 will send this to Creator. */
-  setStatus("Configuration ready for machine " + MACHINE_ID + " (" + json.length + " chars). [Save-to-Creator comes next]");
-  document.getElementById('hint').textContent = "Gathered " + json.length + " characters of config for machine " + MACHINE_ID + ".";
-  console.log("CONFIG_JSON for machine", MACHINE_ID, json);
+  var btn=document.getElementById('saveBtn'); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
+  setStatus("Saving configuration for machine " + MACHINE_ID + " …");
+  var body = JSON.stringify({ machineName: MACHINE_ID, config: json });
+  /* First try a normal CORS POST so we can read the result. If the browser blocks it, retry no-cors (fire-and-forget). */
+  try{
+    var resp = await fetch(SAVE_API, { method:"POST", headers:{ "Content-Type":"application/json" }, body: body });
+    var txt = "";
+    try{ txt = await resp.text(); }catch(ig){ txt=""; }
+    setStatus("Saved configuration to machine " + MACHINE_ID + ". " + (txt?("Server: "+txt.substring(0,120)):""));
+    document.getElementById('hint').textContent = "Configuration saved to Machine Master record " + MACHINE_ID + ".";
+  }catch(e){
+    /* CORS blocked reading — send fire-and-forget; the save still runs server-side */
+    try{
+      await fetch(SAVE_API, { method:"POST", mode:"no-cors", headers:{ "Content-Type":"application/json" }, body: body });
+      setStatus("Sent configuration for machine " + MACHINE_ID + ". Open the Machine record to confirm it saved.");
+      document.getElementById('hint').textContent = "Configuration sent to Machine Master record " + MACHINE_ID + " (verify on the record).";
+    }catch(e2){
+      setStatus("Save failed: " + e2.message);
+    }
+  }
+  if(btn){ btn.disabled=false; btn.textContent="Save Configuration"; }
 }
 var _sb=document.getElementById('saveBtn'); if(_sb) _sb.addEventListener('click', onSaveClick);
 
