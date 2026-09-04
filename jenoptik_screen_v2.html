@@ -595,7 +595,7 @@ async function onSaveClick(){
   try{
     var form = new URLSearchParams();
     form.append("logId", LOG_ID);
-    form.append("config", json);
+    form.append("config", btoa(unescape(encodeURIComponent(json))));
     await fetch(LOG_SAVE_WEBHOOK, { method:"POST", body: form });
     setStatus("Sent configuration to Log " + LOG_ID + ". A PDF is being generated — check the Log record's Machine Data Record in a moment.");
     document.getElementById('hint').textContent = "Configuration sent to Log record " + LOG_ID + " (PDF generating).";
