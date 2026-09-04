@@ -78,6 +78,7 @@
 <div class="toolbar">
   <button class="up-btn" id="uploadBtn">Upload machine PDF</button>
   <button class="up-btn" id="saveBtn" style="background:#16803c;display:none;">Save Configuration</button>
+  <button class="up-btn" id="copyBtn" style="background:#6741d9;display:none;">Copy Config JSON</button>
   <input type="file" id="pdfInput" accept="application/pdf">
   <span class="up-status" id="upStatus">Upload a machine data-record PDF to load its values.</span>
 </div>
@@ -350,6 +351,7 @@ async function processBuffer(buf, sourceName){
     renderAll();
     PDF_LOADED=true;
     var sb=document.getElementById('saveBtn'); if(sb) sb.style.display='inline-block';
+    var cb=document.getElementById('copyBtn'); if(cb) cb.style.display='inline-block';
     setStatus("Loaded: "+sourceName+(MACHINE_ID?"  — click Save Configuration to store it.":""));
     document.getElementById('hint').textContent="Showing values from "+sourceName;
   }catch(e){ setStatus("Error: "+e.message); }
@@ -586,32 +588,64 @@ function buildConfigJSON(){
 var SAVE_API = "https://www.zohoapis.com/creator/custom/sarathynds_saryam/Save_Machine_Config?publickey=zWFCsZX1rOnAGn0bBQW11HY0Q";
 async function onSaveClick(){
   if(!PDF_LOADED){ setStatus("Load a PDF first, then Save."); return; }
-  if(!MACHINE_ID){ setStatus("No machine name. Open this viewer with ?machineId=<Machine Name>."); return; }
+  if(!LOG_ID){ setStatus("No Log ID. Open this viewer from a Log record (?logId=...)."); return; }
   var json = buildConfigJSON();
   var btn=document.getElementById('saveBtn'); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
-  setStatus("Saving configuration for machine " + MACHINE_ID + " …");
-  var formData = new FormData();
-  formData.append("machineName", MACHINE_ID);
-  formData.append("config", json);
+  setStatus("Saving configuration to Log " + LOG_ID + " …");
   try{
-    var resp = await fetch(SAVE_API, { method:"POST", body: formData });
-    var txt = "";
-    try{ txt = await resp.text(); }catch(ig){ txt = ""; }
-    if(!resp.ok){ throw new Error("HTTP " + resp.status + (txt ? " - " + txt : "")); }
-    setStatus("Saved configuration to machine " + MACHINE_ID + ". " + (txt ? ("Server: " + txt.substring(0,120)) : ""));
-    document.getElementById('hint').textContent = "Configuration saved to Machine Master record " + MACHINE_ID + ".";
+    var form = new URLSearchParams();
+    form.append("logId", LOG_ID);
+    form.append("config", json);
+    await fetch(LOG_SAVE_WEBHOOK, { method:"POST", body: form });
+    setStatus("Sent configuration to Log " + LOG_ID + ". A PDF is being generated — check the Log record's Machine Data Record in a moment.");
+    document.getElementById('hint').textContent = "Configuration sent to Log record " + LOG_ID + " (PDF generating).";
   }catch(e){
     setStatus("Save failed: " + e.message);
   }
   if(btn){ btn.disabled=false; btn.textContent="Save Configuration"; }
 }
+var LOG_SAVE_WEBHOOK = "https://flow.zoho.com/896521609/flow/webhook/incoming?zapikey=1001.b6c8f1bb9592ee6236945c292490a20e.038b987f75e08c203f999d77a4a6d5a8&isdebug=false";
 var _sb=document.getElementById('saveBtn'); if(_sb) _sb.addEventListener('click', onSaveClick);
 
+/* ---------- COPY CONFIG JSON (manual save: copy then paste into Machine_Configuration_Data) ---------- */
+async function onCopyClick(){
+  if(!PDF_LOADED){ setStatus("Load a PDF first, then Copy."); return; }
+  var json = buildConfigJSON();
+  var ok=false;
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(json); ok=true;
+    }
+  }catch(e){ ok=false; }
+  if(!ok){
+    /* fallback: temporary textarea + execCommand */
+    try{
+      var ta=document.createElement('textarea');
+      ta.value=json; ta.style.position='fixed'; ta.style.left='-9999px';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      ok=document.execCommand('copy'); document.body.removeChild(ta);
+    }catch(e2){ ok=false; }
+  }
+  if(ok){
+    setStatus("Configuration copied ("+json.length+" chars). Paste it into the machine's Machine Configuration Data field, then Save the record.");
+    document.getElementById('hint').textContent="Copied config for "+(MACHINE_ID||"this machine")+". Paste into Machine_Configuration_Data.";
+  } else {
+    /* last resort: show the JSON in a box the user can select manually */
+    setStatus("Auto-copy blocked. The JSON is shown below — select all and copy it.");
+    var p=document.getElementById('panel');
+    p.innerHTML="<div class='panel-h'>Config JSON (select all &amp; copy)</div><textarea style='width:100%;height:340px;font-size:11px;font-family:monospace;'>"+esc(json)+"</textarea>";
+  }
+}
+var _cb=document.getElementById('copyBtn'); if(_cb) _cb.addEventListener('click', onCopyClick);
+
+var LOG_ID = "";
 (function(){
   var params=new URLSearchParams(location.search);
   var recId=params.get('recId');
   MACHINE_ID = params.get('machineId') || "";
-  if(MACHINE_ID){ setStatus("Machine record: " + MACHINE_ID + " — upload a PDF, then Save."); }
+  LOG_ID = params.get('logId') || "";
+  if(LOG_ID){ setStatus("Log record: " + LOG_ID + " — upload a PDF, then Save Configuration."); }
+  else if(MACHINE_ID){ setStatus("Machine record: " + MACHINE_ID + " — upload a PDF, then Save."); }
   if(recId){ autoLoadRecord(recId); }
 })();
 </script>
