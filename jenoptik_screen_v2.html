@@ -590,23 +590,18 @@ async function onSaveClick(){
   var json = buildConfigJSON();
   var btn=document.getElementById('saveBtn'); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
   setStatus("Saving configuration for machine " + MACHINE_ID + " …");
-  var body = JSON.stringify({ machineName: MACHINE_ID, config: json });
-  /* First try a normal CORS POST so we can read the result. If the browser blocks it, retry no-cors (fire-and-forget). */
+  var formData = new FormData();
+  formData.append("machineName", MACHINE_ID);
+  formData.append("config", json);
   try{
-    var resp = await fetch(SAVE_API, { method:"POST", headers:{ "Content-Type":"application/json" }, body: body });
+    var resp = await fetch(SAVE_API, { method:"POST", body: formData });
     var txt = "";
-    try{ txt = await resp.text(); }catch(ig){ txt=""; }
-    setStatus("Saved configuration to machine " + MACHINE_ID + ". " + (txt?("Server: "+txt.substring(0,120)):""));
+    try{ txt = await resp.text(); }catch(ig){ txt = ""; }
+    if(!resp.ok){ throw new Error("HTTP " + resp.status + (txt ? " - " + txt : "")); }
+    setStatus("Saved configuration to machine " + MACHINE_ID + ". " + (txt ? ("Server: " + txt.substring(0,120)) : ""));
     document.getElementById('hint').textContent = "Configuration saved to Machine Master record " + MACHINE_ID + ".";
   }catch(e){
-    /* CORS blocked reading — send fire-and-forget; the save still runs server-side */
-    try{
-      await fetch(SAVE_API, { method:"POST", mode:"no-cors", headers:{ "Content-Type":"application/json" }, body: body });
-      setStatus("Sent configuration for machine " + MACHINE_ID + ". Open the Machine record to confirm it saved.");
-      document.getElementById('hint').textContent = "Configuration sent to Machine Master record " + MACHINE_ID + " (verify on the record).";
-    }catch(e2){
-      setStatus("Save failed: " + e2.message);
-    }
+    setStatus("Save failed: " + e.message);
   }
   if(btn){ btn.disabled=false; btn.textContent="Save Configuration"; }
 }
