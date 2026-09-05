@@ -77,8 +77,8 @@
 <body>
 <div class="toolbar">
   <button class="up-btn" id="uploadBtn">Upload machine PDF</button>
-  <button class="up-btn" id="saveBtn" style="background:#16803c;display:none;">Save Configuration</button>
-  <button class="up-btn" id="copyBtn" style="background:#6741d9;display:none;">Copy Config JSON</button>
+  <button class="up-btn" id="editBtn" style="background:#b26a00;display:none;">Edit Values</button>
+  <button class="up-btn" id="exitBtn" style="background:#16803c;display:none;">Save &amp; Exit</button>
   <input type="file" id="pdfInput" accept="application/pdf">
   <span class="up-status" id="upStatus">Upload a machine data-record PDF to load its values.</span>
 </div>
@@ -350,8 +350,8 @@ async function processBuffer(buf, sourceName){
     DATA=parseAll(pg.p1,pg.p2rows,pg.p3);
     renderAll();
     PDF_LOADED=true;
-    var sb=document.getElementById('saveBtn'); if(sb) sb.style.display='inline-block';
-    var cb=document.getElementById('copyBtn'); if(cb) cb.style.display='inline-block';
+    var xb=document.getElementById('exitBtn'); if(xb) xb.style.display='inline-block';
+    var eb=document.getElementById('editBtn'); if(eb) eb.style.display='inline-block';
     setStatus("Loaded: "+sourceName+(MACHINE_ID?"  — click Save Configuration to store it.":""));
     document.getElementById('hint').textContent="Showing values from "+sourceName;
   }catch(e){ setStatus("Error: "+e.message); }
@@ -488,8 +488,10 @@ function renderTab(name){
 }
 function activateMain(name){ /* compat with parser calls */ }
 function activateTab(name){
+  if(EDIT_MODE){ harvestEdits(); }
   document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-tab')===name); });
   renderTab(name);
+  if(EDIT_MODE){ applyEditMode(); }
 }
 function renderAll(){ renderHeader(); renderRefHoles(); activateTab('AC'); }
 function initTabs(){ document.querySelectorAll('.tab').forEach(function(tb){ tb.addEventListener('click',function(){ activateTab(tb.getAttribute('data-tab')); }); }); }
@@ -584,59 +586,122 @@ function buildConfigJSON(){
   return JSON.stringify(cfg);
 }
 
-/* ---------- STAGE 4: save config JSON to Machine Master via published Creator API ---------- */
-var SAVE_API = "https://www.zohoapis.com/creator/custom/sarathynds_saryam/Save_Machine_Config?publickey=zWFCsZX1rOnAGn0bBQW11HY0Q";
-async function onSaveClick(){
-  if(!PDF_LOADED){ setStatus("Load a PDF first, then Save."); return; }
-  if(!LOG_ID){ setStatus("No Log ID. Open this viewer from a Log record (?logId=...)."); return; }
-  var json = buildConfigJSON();
-  var btn=document.getElementById('saveBtn'); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
-  setStatus("Saving configuration to Log " + LOG_ID + " …");
-  try{
-    var form = new URLSearchParams();
-    form.append("logId", LOG_ID);
-    form.append("config", btoa(unescape(encodeURIComponent(json))));
-    await fetch(LOG_SAVE_WEBHOOK, { method:"POST", body: form });
-    setStatus("Sent configuration to Log " + LOG_ID + ". A PDF is being generated — check the Log record's Machine Data Record in a moment.");
-    document.getElementById('hint').textContent = "Configuration sent to Log record " + LOG_ID + " (PDF generating).";
-  }catch(e){
-    setStatus("Save failed: " + e.message);
-  }
-  if(btn){ btn.disabled=false; btn.textContent="Save Configuration"; }
-}
-var LOG_SAVE_WEBHOOK = "https://flow.zoho.com/896521609/flow/webhook/incoming?zapikey=1001.b6c8f1bb9592ee6236945c292490a20e.038b987f75e08c203f999d77a4a6d5a8&isdebug=false";
-var _sb=document.getElementById('saveBtn'); if(_sb) _sb.addEventListener('click', onSaveClick);
-
-/* ---------- COPY CONFIG JSON (manual save: copy then paste into Machine_Configuration_Data) ---------- */
-async function onCopyClick(){
-  if(!PDF_LOADED){ setStatus("Load a PDF first, then Copy."); return; }
-  var json = buildConfigJSON();
-  var ok=false;
-  try{
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      await navigator.clipboard.writeText(json); ok=true;
+/* ---------- EDIT MODE: make all shown values editable ---------- */
+var EDIT_MODE=false;
+function applyEditMode(){
+  var panel=document.getElementById('panel');
+  var scope=document.querySelector('.machine');
+  if(!scope) return;
+  /* make value cells / boxes editable */
+  var sel=scope.querySelectorAll(".kv .v, table.rh td .box, .subt td, .bc-field, .rec-val, .mini");
+  sel.forEach(function(el){
+    if(EDIT_MODE){
+      el.setAttribute('contenteditable','true');
+      el.style.outline='1px dashed #b26a00';
+      el.style.background='#fff7ec';
+    } else {
+      el.removeAttribute('contenteditable');
+      el.style.outline='';
     }
-  }catch(e){ ok=false; }
-  if(!ok){
-    /* fallback: temporary textarea + execCommand */
-    try{
-      var ta=document.createElement('textarea');
-      ta.value=json; ta.style.position='fixed'; ta.style.left='-9999px';
-      document.body.appendChild(ta); ta.focus(); ta.select();
-      ok=document.execCommand('copy'); document.body.removeChild(ta);
-    }catch(e2){ ok=false; }
+  });
+}
+/* Rebuild DATA from the edited on-screen values before saving */
+function harvestEdits(){
+  var scope=document.querySelector('.machine');
+  if(!scope) return;
+  /* header */
+  var t=document.getElementById('dr_title'); if(t) DATA.header.title=t.textContent.trim();
+  var n=document.getElementById('dr_number'); if(n) DATA.header.number=n.textContent.trim();
+  var p1=document.getElementById('so_p1'); if(p1) DATA.header.switch_off_p1=p1.textContent.trim();
+  var p2=document.getElementById('so_p2'); if(p2) DATA.header.switch_off_p2=p2.textContent.trim();
+  var at1=document.getElementById('attn'); if(at1) DATA.header.attenuators=at1.textContent.trim();
+  /* reference holes table (left) -> DATA.settings basic cols */
+  var rows=document.querySelectorAll('#rh_body tr');
+  rows.forEach(function(tr,idx){
+    if(DATA.settings[idx]){
+      var boxes=tr.querySelectorAll('td .box');
+      /* order: dist, amp, p1, pulses1, (ctrl pill), p2, pulses2, (load pill) */
+      if(boxes[0])DATA.settings[idx].dist=boxes[0].textContent.trim();
+      if(boxes[1])DATA.settings[idx].amp=boxes[1].textContent.trim();
+      if(boxes[2])DATA.settings[idx].p1=boxes[2].textContent.trim();
+      if(boxes[3])DATA.settings[idx].pulses1=boxes[3].textContent.trim();
+      if(boxes[4])DATA.settings[idx].p2=boxes[4].textContent.trim();
+      if(boxes[5])DATA.settings[idx].pulses2=boxes[5].textContent.trim();
+    }
+  });
+  /* current tab's kv/table edits: re-read the visible panel into the matching DATA arrays */
+  /* General kv */
+  var activeTab=document.querySelector('.tab.active');
+  var tabName=activeTab?activeTab.getAttribute('data-tab'):'';
+  var kvEls=document.querySelectorAll('#panel .kv');
+  /* We map kv edits generically: match by label text into the relevant arrays */
+  function updateArrayByLabel(arr){
+    if(!arr) return;
+    kvEls.forEach(function(kv){
+      var k=kv.querySelector('.k'), v=kv.querySelector('.v');
+      if(k&&v){ var lbl=k.textContent.trim(), val=v.textContent.trim();
+        for(var i=0;i<arr.length;i++){ if(arr[i][0]===lbl){ arr[i][1]=val; } }
+      }
+    });
   }
-  if(ok){
-    setStatus("Configuration copied ("+json.length+" chars). Paste it into the machine's Machine Configuration Data field, then Save the record.");
-    document.getElementById('hint').textContent="Copied config for "+(MACHINE_ID||"this machine")+". Paste into Machine_Configuration_Data.";
-  } else {
-    /* last resort: show the JSON in a box the user can select manually */
-    setStatus("Auto-copy blocked. The JSON is shown below — select all and copy it.");
-    var p=document.getElementById('panel');
-    p.innerHTML="<div class='panel-h'>Config JSON (select all &amp; copy)</div><textarea style='width:100%;height:340px;font-size:11px;font-family:monospace;'>"+esc(json)+"</textarea>";
+  updateArrayByLabel(DATA.general);
+  updateArrayByLabel(DATA.ac);
+  /* table edits (settings2, pbh, dist, bridges, eval_rows, sensor) from #panel .subt */
+  var subt=document.querySelector('#panel .subt');
+  if(subt){
+    var trs=subt.querySelectorAll('tr');
+    /* skip header row (index 0) */
+    var arrMap={ 'PBH':DATA.pbh, 'Bridges':DATA.bridges, 'Distance':DATA.dist };
+    var target=arrMap[tabName];
+    if(target){
+      for(var r=1;r<trs.length && (r-1)<target.length;r++){
+        var tds=trs[r].querySelectorAll('td');
+        for(var col=0;col<tds.length && col<target[r-1].length;col++){
+          target[r-1][col]=tds[col].textContent.trim();
+        }
+      }
+    }
   }
 }
-var _cb=document.getElementById('copyBtn'); if(_cb) _cb.addEventListener('click', onCopyClick);
+
+/* ---------- SAVE PDF then EXIT ---------- */
+var LOG_SAVE_WEBHOOK = "https://flow.zoho.com/896521609/flow/webhook/incoming?zapikey=1001.b6c8f1bb9592ee6236945c292490a20e.038b987f75e08c203f999d77a4a6d5a8&isdebug=false";
+var DETAIL_URL = "https://creatorapp.zoho.com/sarathynds_saryam/jenoptik-logs/#Page:Reports_Detail_View?record_id=";
+async function onExitClick(){
+  if(!PDF_LOADED){ setStatus("Load a PDF first."); return; }
+  if(!LOG_ID){ setStatus("No Log ID. Open this viewer from a Log record (?logId=...)."); return; }
+  if(EDIT_MODE){ harvestEdits(); }
+  var json = buildConfigJSON();
+  var btn=document.getElementById('exitBtn'); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
+  setStatus("Saving to Log " + LOG_ID + " …");
+  var form = new URLSearchParams();
+  form.append("logId", LOG_ID);
+  form.append("config", btoa(unescape(encodeURIComponent(json))));
+  try{
+    await fetch(LOG_SAVE_WEBHOOK, { method:"POST", mode:"no-cors", body: form });
+  }catch(e){ }
+  setStatus("Saved to Log " + LOG_ID + ". Returning to the report…");
+  document.getElementById('hint').textContent = "Configuration saved to Log record " + LOG_ID + ".";
+  setTimeout(function(){
+    var back = DETAIL_URL + LOG_ID;
+    try{
+      if(window.top && window.top!==window.self){ window.top.location.href = back; }
+      else { window.location.href = back; }
+    }catch(e){
+      window.location.href = back;
+    }
+  }, 1400);
+}
+var _xb=document.getElementById('exitBtn'); if(_xb) _xb.addEventListener('click', onExitClick);
+var _eb=document.getElementById('editBtn');
+if(_eb) _eb.addEventListener('click', function(){
+  if(!PDF_LOADED){ setStatus("Load a PDF first."); return; }
+  EDIT_MODE=!EDIT_MODE;
+  _eb.textContent = EDIT_MODE ? "Editing… (click to lock)" : "Edit Values";
+  _eb.style.background = EDIT_MODE ? "#8a4f00" : "#b26a00";
+  applyEditMode();
+  setStatus(EDIT_MODE ? "Edit mode ON — click any value to change it. Switch tabs to edit those too." : "Edit mode off.");
+});
 
 var LOG_ID = "";
 (function(){
