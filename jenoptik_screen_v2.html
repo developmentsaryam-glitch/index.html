@@ -4,715 +4,4098 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jenoptik VOTAN — Data Record Viewer</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<style>
-  :root{--panel:#c3c7cb;--panel-dark:#b4b8bd;--field:#e9ecef;--fb:#8a9199;--ink:#1b1f24;--ink-soft:#3d444c;--tab:#c9cdd2;--tab-active:#eef1f4;--line:#9aa0a7;--green:#3fb549;--title:#0b3d2e;}
-  *{box-sizing:border-box;}
-  body{margin:0;background:#4a4f55;font-family:'Segoe UI',Tahoma,Arial,sans-serif;color:var(--ink);padding:12px;}
-  .toolbar{max-width:1240px;margin:0 auto 10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-  .up-btn{background:#2f6fb0;color:#fff;font-size:13px;font-weight:600;padding:8px 15px;border:none;border-radius:6px;cursor:pointer;}
-  .up-btn:hover{background:#255a90;} #pdfInput{display:none;}
-  .up-status{color:#cfd6dd;font-size:12px;}
-  .machine{max-width:1240px;margin:0 auto;background:var(--panel);border:2px solid #7d8288;border-radius:4px;box-shadow:0 10px 40px rgba(0,0,0,.5);overflow:hidden;}
-  .titlebar{background:linear-gradient(#2f3a44,#1e262e);color:#dfe6ec;padding:6px 13px;font-size:12.5px;font-weight:600;display:flex;justify-content:space-between;}
-  .titlebar .brand{color:#8fd14f;font-weight:700;}
-  .menubar{background:var(--panel-dark);border-bottom:1px solid var(--line);padding:4px 12px;font-size:12px;color:var(--ink-soft);display:flex;gap:16px;}
-  .rec-head{padding:10px 14px 6px;display:flex;flex-direction:column;gap:6px;}
-  .rec-line{display:flex;align-items:center;gap:10px;font-size:12px;}
-  .rec-line label{width:140px;color:var(--ink-soft);}
-  .rec-val{background:var(--field);border:1px solid var(--fb);border-radius:2px;padding:2px 9px;min-width:200px;text-align:center;color:#20303a;}
-  .toprow{display:flex;flex-wrap:wrap;gap:20px;align-items:center;padding:5px 14px 10px;font-size:11.5px;color:var(--ink-soft);border-bottom:1px solid var(--line);}
-  .toprow .cell{display:flex;align-items:center;gap:6px;}
-  .mini{background:var(--field);border:1px solid var(--fb);border-radius:2px;padding:1px 7px;min-width:42px;text-align:center;}
-  .onpill{background:var(--green);color:#08300c;font-weight:700;font-size:9px;padding:1px 6px;border-radius:2px;}
-  .offpill{background:#aeb4ba;color:#333;font-weight:700;font-size:9px;padding:1px 6px;border-radius:2px;}
-  .body{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:12px;padding:12px 14px;}
-  .frame{border:1px solid var(--line);border-radius:3px;background:var(--panel);}
-  .frame-title{font-size:11px;color:var(--ink-soft);padding:4px 9px;border-bottom:1px solid var(--line);background:var(--panel-dark);font-weight:600;}
-  table.rh{width:100%;border-collapse:collapse;font-size:10.5px;}
-  table.rh th{background:var(--panel-dark);color:var(--ink-soft);font-weight:600;padding:4px 3px;border:1px solid var(--line);font-size:9.5px;line-height:1.1;vertical-align:bottom;}
-  table.rh td{border:1px solid var(--line);padding:2px 3px;text-align:center;}
-  table.rh td.idcell{background:#e7cf9a;font-weight:700;color:#5a4a1e;}
-  table.rh td .box{background:var(--field);border:1px solid var(--fb);border-radius:2px;padding:1px 4px;display:inline-block;min-width:28px;}
-  .tabwrap{display:flex;flex-direction:column;}
-  .tabs{display:flex;flex-wrap:wrap;background:var(--panel-dark);border-bottom:1px solid var(--line);padding:0 2px;}
-  .tab{font-size:11px;padding:6px 11px;border:1px solid var(--line);border-bottom:none;background:var(--tab);cursor:pointer;color:var(--ink-soft);border-radius:4px 4px 0 0;margin:3px 1px 0;user-select:none;}
-  .tab.active{background:var(--tab-active);color:#0b2d4a;font-weight:700;box-shadow:0 -2px 0 #2f6fb0 inset;}
-  .tabclose{color:#b23;font-weight:700;margin-right:3px;}
-  .panel-body{padding:12px 13px;min-height:400px;overflow-x:auto;}
-  .panel-h{font-size:12.5px;font-weight:700;color:var(--title);margin:0 0 10px;}
-  .kv{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;font-size:11.5px;border-bottom:1px dotted #a9afb6;}
-  .kv:last-child{border-bottom:none;}
-  .kv .k{color:var(--ink-soft);} .kv .v{background:var(--field);border:1px solid var(--fb);border-radius:2px;padding:1px 9px;min-width:60px;text-align:center;}
-  .grp{border:1px solid var(--line);border-radius:3px;margin-bottom:10px;}
-  .grp-t{font-size:10.5px;font-weight:700;color:#0b2d73;background:#eef4ff;padding:3px 8px;border-bottom:1px solid var(--line);}
-  .grp-b{padding:6px 9px;}
-  .subt{width:100%;border-collapse:collapse;font-size:10px;}
-  .subt th{background:var(--panel-dark);color:var(--ink-soft);font-weight:700;padding:3px;border:1px solid var(--line);font-size:9px;}
-  .subt td{border:1px solid var(--line);padding:3px 4px;text-align:center;background:var(--field);}
-  .subt td.idc{background:#e7cf9a;font-weight:700;color:#5a4a1e;}
-  .btnbar{display:flex;flex-wrap:wrap;gap:5px;padding:9px 14px 12px;border-top:1px solid var(--line);background:var(--panel-dark);}
-  .mbtn{flex:1;min-width:88px;text-align:center;font-size:10.5px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:8px 3px;line-height:1.2;}
-  .mbtn b{display:block;color:#1b1f24;font-size:10.5px;}
-  .empty{color:#667;font-size:12px;padding:14px;}
-  .hint{max-width:1240px;margin:9px auto 0;color:#cfd6dd;font-size:12px;}
-  @media(max-width:860px){.body{grid-template-columns:1fr;}}
 
-  .bc-panel{font-size:11px;}
-  .bc-group{border:1px solid var(--line);border-radius:3px;margin-bottom:9px;position:relative;padding:8px 10px 10px;}
-  .bc-group>.bc-legend{position:absolute;top:-8px;left:8px;background:var(--panel);padding:0 5px;font-size:10px;font-weight:700;color:var(--ink-soft);}
-  .bc-row{display:flex;align-items:center;gap:8px;padding:3px 0;}
-  .bc-radio{width:12px;height:12px;border:1px solid #555;border-radius:50%;display:inline-block;position:relative;flex-shrink:0;background:#fff;}
-  .bc-radio.on:after{content:'';position:absolute;top:2px;left:2px;width:6px;height:6px;border-radius:50%;background:#1b1f24;}
-  .bc-lab{color:var(--ink-soft);}
-  .bc-flag{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:2px;}
-  .bc-flag.on{background:var(--green);color:#08300c;} .bc-flag.off{background:#aeb4ba;color:#333;}
-  .bc-two{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
-  .bc-field{background:var(--field);border:1px solid var(--fb);border-radius:2px;padding:2px 7px;font-size:10.5px;min-width:60px;flex:1;}
-  .bc-file{font-size:10.5px;color:#20303a;margin-top:4px;word-break:break-all;}
-  .bc-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap;}
-  .bc-btn{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:5px 12px;font-size:10.5px;color:var(--ink-soft);}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+  :root{
+    --panel:#c3c7cb;
+    --panel-dark:#b4b8bd;
+    --field:#e9ecef;
+    --fb:#8a9199;
+    --ink:#1b1f24;
+    --ink-soft:#3d444c;
+    --tab:#c9cdd2;
+    --tab-active:#eef1f4;
+    --line:#9aa0a7;
+    --green:#3fb549;
+    --title:#0b3d2e;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    background:#4a4f55;
+    font-family:'Segoe UI',Tahoma,Arial,sans-serif;
+    color:var(--ink);
+    padding:12px;
+  }
+
+  .toolbar{
+    max-width:1240px;
+    margin:0 auto 10px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .up-btn{
+    background:#2f6fb0;
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    padding:8px 15px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+  }
+
+  .up-btn:hover{
+    background:#255a90;
+  }
+
+  #pdfInput,
+  #folderInput{
+    display:none;
+  }
+
+  .up-status{
+    color:#cfd6dd;
+    font-size:12px;
+  }
+
+  .machine{
+    max-width:1240px;
+    margin:0 auto;
+    background:var(--panel);
+    border:2px solid #7d8288;
+    border-radius:4px;
+    box-shadow:0 10px 40px rgba(0,0,0,.5);
+    overflow:hidden;
+  }
+
+  .titlebar{
+    background:linear-gradient(#2f3a44,#1e262e);
+    color:#dfe6ec;
+    padding:6px 13px;
+    font-size:12.5px;
+    font-weight:600;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  .titlebar .brand{
+    color:#8fd14f;
+    font-weight:700;
+  }
+
+  .menubar{
+    background:var(--panel-dark);
+    border-bottom:1px solid var(--line);
+    padding:4px 12px;
+    font-size:12px;
+    color:var(--ink-soft);
+    display:flex;
+    gap:16px;
+  }
+
+  .rec-head{
+    padding:10px 14px 6px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .rec-line{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:12px;
+  }
+
+  .rec-line label{
+    width:140px;
+    color:var(--ink-soft);
+  }
+
+  .rec-val{
+    background:var(--field);
+    border:1px solid var(--fb);
+    border-radius:2px;
+    padding:2px 9px;
+    min-width:200px;
+    text-align:center;
+    color:#20303a;
+  }
+
+  .toprow{
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+    align-items:center;
+    padding:5px 14px 10px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    border-bottom:1px solid var(--line);
+  }
+
+  .toprow .cell{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+
+  .mini{
+    background:var(--field);
+    border:1px solid var(--fb);
+    border-radius:2px;
+    padding:1px 7px;
+    min-width:42px;
+    text-align:center;
+  }
+
+  .onpill{
+    background:var(--green);
+    color:#08300c;
+    font-weight:700;
+    font-size:9px;
+    padding:1px 6px;
+    border-radius:2px;
+  }
+
+  .offpill{
+    background:#aeb4ba;
+    color:#333;
+    font-weight:700;
+    font-size:9px;
+    padding:1px 6px;
+    border-radius:2px;
+  }
+
+  .body{
+    display:grid;
+    grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+    gap:12px;
+    padding:12px 14px;
+  }
+
+  .frame{
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:var(--panel);
+  }
+
+  .frame-title{
+    font-size:11px;
+    color:var(--ink-soft);
+    padding:4px 9px;
+    border-bottom:1px solid var(--line);
+    background:var(--panel-dark);
+    font-weight:600;
+  }
+
+  table.rh{
+    width:100%;
+    border-collapse:collapse;
+    font-size:10.5px;
+  }
+
+  table.rh th{
+    background:var(--panel-dark);
+    color:var(--ink-soft);
+    font-weight:600;
+    padding:4px 3px;
+    border:1px solid var(--line);
+    font-size:9.5px;
+    line-height:1.1;
+    vertical-align:bottom;
+  }
+
+  table.rh td{
+    border:1px solid var(--line);
+    padding:2px 3px;
+    text-align:center;
+  }
+
+  table.rh td.idcell{
+    background:#e7cf9a;
+    font-weight:700;
+    color:#5a4a1e;
+  }
+
+  table.rh td .box{
+    background:var(--field);
+    border:1px solid var(--fb);
+    border-radius:2px;
+    padding:1px 4px;
+    display:inline-block;
+    min-width:28px;
+  }
+
+  .tabwrap{
+    display:flex;
+    flex-direction:column;
+  }
+
+  .tabs{
+    display:flex;
+    flex-wrap:wrap;
+    background:var(--panel-dark);
+    border-bottom:1px solid var(--line);
+    padding:0 2px;
+  }
+
+  .tab{
+    font-size:11px;
+    padding:6px 11px;
+    border:1px solid var(--line);
+    border-bottom:none;
+    background:var(--tab);
+    cursor:pointer;
+    color:var(--ink-soft);
+    border-radius:4px 4px 0 0;
+    margin:3px 1px 0;
+    user-select:none;
+  }
+
+  .tab.active{
+    background:var(--tab-active);
+    color:#0b2d4a;
+    font-weight:700;
+    box-shadow:0 -2px 0 #2f6fb0 inset;
+  }
+
+  .tabclose{
+    color:#b23;
+    font-weight:700;
+    margin-right:3px;
+  }
+
+  .panel-body{
+    padding:12px 13px;
+    min-height:400px;
+    overflow-x:auto;
+  }
+
+  .panel-h{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--title);
+    margin:0 0 10px;
+  }
+
+  .kv{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:4px 0;
+    font-size:11.5px;
+    border-bottom:1px dotted #a9afb6;
+  }
+
+  .kv:last-child{
+    border-bottom:none;
+  }
+
+  .kv .k{
+    color:var(--ink-soft);
+  }
+
+  .kv .v{
+    background:var(--field);
+    border:1px solid var(--fb);
+    border-radius:2px;
+    padding:1px 9px;
+    min-width:60px;
+    text-align:center;
+  }
+
+  .grp{
+    border:1px solid var(--line);
+    border-radius:3px;
+    margin-bottom:10px;
+  }
+
+  .grp-t{
+    font-size:10.5px;
+    font-weight:700;
+    color:#0b2d73;
+    background:#eef4ff;
+    padding:3px 8px;
+    border-bottom:1px solid var(--line);
+  }
+
+  .grp-b{
+    padding:6px 9px;
+  }
+
+  .subt{
+    width:100%;
+    border-collapse:collapse;
+    font-size:10px;
+  }
+
+  .subt th{
+    background:var(--panel-dark);
+    color:var(--ink-soft);
+    font-weight:700;
+    padding:3px;
+    border:1px solid var(--line);
+    font-size:9px;
+  }
+
+  .subt td{
+    border:1px solid var(--line);
+    padding:3px 4px;
+    text-align:center;
+    background:var(--field);
+  }
+
+  .subt td.idc{
+    background:#e7cf9a;
+    font-weight:700;
+    color:#5a4a1e;
+  }
+
+  .btnbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px;
+    padding:9px 14px 12px;
+    border-top:1px solid var(--line);
+    background:var(--panel-dark);
+  }
+
+  .mbtn{
+    flex:1;
+    min-width:88px;
+    text-align:center;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:8px 3px;
+    line-height:1.2;
+  }
+
+  .mbtn b{
+    display:block;
+    color:#1b1f24;
+    font-size:10.5px;
+  }
+
+  .empty{
+    color:#667;
+    font-size:12px;
+    padding:14px;
+  }
+
+  .hint{
+    max-width:1240px;
+    margin:9px auto 0;
+    color:#cfd6dd;
+    font-size:12px;
+  }
+
+  @media(max-width:860px){
+    .body{
+      grid-template-columns:1fr;
+    }
+  }
+
+  .bc-panel{
+    font-size:11px;
+  }
+
+  .bc-group{
+    border:1px solid var(--line);
+    border-radius:3px;
+    margin-bottom:9px;
+    position:relative;
+    padding:8px 10px 10px;
+  }
+
+  .bc-group>.bc-legend{
+    position:absolute;
+    top:-8px;
+    left:8px;
+    background:var(--panel);
+    padding:0 5px;
+    font-size:10px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+
+  .bc-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:3px 0;
+  }
+
+  .bc-radio{
+    width:12px;
+    height:12px;
+    border:1px solid #555;
+    border-radius:50%;
+    display:inline-block;
+    position:relative;
+    flex-shrink:0;
+    background:#fff;
+  }
+
+  .bc-radio.on:after{
+    content:'';
+    position:absolute;
+    top:2px;
+    left:2px;
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#1b1f24;
+  }
+
+  .bc-lab{
+    color:var(--ink-soft);
+  }
+
+  .bc-flag{
+    display:inline-block;
+    font-size:9px;
+    font-weight:700;
+    padding:1px 6px;
+    border-radius:2px;
+  }
+
+  .bc-flag.on{
+    background:var(--green);
+    color:#08300c;
+  }
+
+  .bc-flag.off{
+    background:#aeb4ba;
+    color:#333;
+  }
+
+  .bc-two{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+  }
+
+  .bc-field{
+    background:var(--field);
+    border:1px solid var(--fb);
+    border-radius:2px;
+    padding:2px 7px;
+    font-size:10.5px;
+    min-width:60px;
+    flex:1;
+  }
+
+  .bc-file{
+    font-size:10.5px;
+    color:#20303a;
+    margin-top:4px;
+    word-break:break-all;
+  }
+
+  .bc-btns{
+    display:flex;
+    gap:6px;
+    justify-content:flex-end;
+    margin-top:8px;
+    flex-wrap:wrap;
+  }
+
+  .bc-btn{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:5px 12px;
+    font-size:10.5px;
+    color:var(--ink-soft);
+  }
+
+  /* ---------- UPLOAD MENU ---------- */
+
+  .upload-menu{
+    position:fixed;
+    top:90px;
+    left:50%;
+    transform:translateX(-50%);
+    width:320px;
+    max-width:90vw;
+    background:#fff;
+    border:1px solid #d9dde2;
+    border-radius:14px;
+    padding:22px;
+    box-shadow:0 12px 40px rgba(0,0,0,.30);
+    z-index:99999;
+  }
+
+  .upload-menu-title{
+    font-size:18px;
+    font-weight:700;
+    color:#1b1f24;
+    margin-bottom:6px;
+  }
+
+  .upload-menu-subtitle{
+    font-size:13px;
+    color:#6b7280;
+    margin-bottom:16px;
+    line-height:1.4;
+  }
+
+  .upload-choice{
+    display:block;
+    width:100%;
+    padding:11px;
+    margin-bottom:8px;
+    border:0;
+    border-radius:7px;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+    color:#fff;
+  }
+
+  .upload-choice.pdf{
+    background:#16803c;
+  }
+
+  .upload-choice.zip{
+    background:#2864c7;
+  }
+
+  .upload-choice.folder{
+    background:#555;
+  }
+
+  .upload-choice.cancel{
+    margin-top:10px;
+    margin-bottom:0;
+    background:#f5f5f5;
+    color:#333;
+    border:1px solid #ccc;
+  }
+
+  /* ---------- PDF CHOOSER ---------- */
+
+  .pdf-chooser{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:#fff;
+    padding:22px;
+    border-radius:12px;
+    box-shadow:0 10px 40px rgba(0,0,0,.30);
+    z-index:999999;
+    width:min(500px,90vw);
+    border:1px solid #d9dde2;
+  }
+
+  .pdf-chooser-title{
+    font-size:18px;
+    font-weight:700;
+    margin-bottom:7px;
+    color:#1b1f24;
+  }
+
+  .pdf-chooser-source{
+    font-size:13px;
+    color:#666;
+    margin-bottom:15px;
+    line-height:1.4;
+  }
+
+  .pdf-select{
+    width:100%;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:7px;
+    margin-bottom:15px;
+    font-size:14px;
+    background:#fff;
+  }
+
+  .pdf-load-btn,
+  .pdf-cancel-btn{
+    width:100%;
+    padding:11px;
+    border-radius:7px;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+  }
+
+  .pdf-load-btn{
+    border:0;
+    background:#16803c;
+    color:white;
+  }
+
+  .pdf-cancel-btn{
+    margin-top:8px;
+    border:1px solid #ccc;
+    background:#f5f5f5;
+    color:#333;
+  }
 </style>
 </head>
-<body>
-<div class="toolbar">
-  <button class="up-btn" id="uploadBtn">Upload machine PDF</button>
-  <button class="up-btn" id="editBtn" style="background:#b26a00;display:none;">Edit Values</button>
-  <button class="up-btn" id="exitBtn" style="background:#16803c;display:none;">Save &amp; Exit</button>
-  <input type="file" id="pdfInput" accept="application/pdf">
-  <span class="up-status" id="upStatus">Upload a machine data-record PDF to load its values.</span>
-</div>
-<div class="machine">
-  <div class="titlebar"><span>Laser - Sensor - Control - Technology 6.0 MC — <span class="brand">JENOPTIK-VOTAN&reg; A408</span></span><span style="opacity:.6;">laser ready</span></div>
-  <div class="menubar"><span>File</span><span>Functions</span><span>Help</span><span>Shift Counter</span><span>Exit</span><span>Language</span></div>
-  <div class="rec-head">
-    <div class="rec-line"><label>Data Record title</label><div class="rec-val" id="dr_title">—</div></div>
-    <div class="rec-line"><label>Data Record number</label><div class="rec-val" id="dr_number">—</div></div>
-  </div>
-  <div class="toprow">
-    <div class="cell"><span class="onpill">ON</span> Show only parameterized ID's</div>
-    <div class="cell">Switch off value P1 (V) <span class="mini" id="so_p1">—</span></div>
-    <div class="cell">Switch off value P2 (V) <span class="mini" id="so_p2">—</span></div>
-    <div class="cell">No. of attenuators <span class="mini" id="attn">—</span> <span class="offpill">OFF</span> Choice by robot</div>
-  </div>
-  <div class="body">
-    <div class="frame">
-      <div class="frame-title">Reference hole</div>
-      <div style="padding:7px;overflow-x:auto;">
-        <table class="rh"><thead><tr>
-          <th>ID</th><th>Distance<br>(ms)</th><th>Amplic.<br>WS %</th><th>Power<br>P1 %</th>
-          <th>Pulses P1<br>(start no.)</th><th>Pulses P1<br>control</th><th>Power<br>P2 %</th>
-          <th>Pulses P2<br>(max. no.)</th><th>Load<br>new</th>
-        </tr></thead><tbody id="rh_body"></tbody></table>
-      </div>
-    </div>
-    <div class="frame tabwrap">
-      <div class="tabs" id="tabs">
-        <div class="tab" data-tab="SH1"><span class="tabclose">&times;</span>SH 1</div>
-        <div class="tab" data-tab="SH2"><span class="tabclose">&times;</span>SH 2</div>
-        <div class="tab" data-tab="PBH"><span class="tabclose">&times;</span>PBH</div>
-        <div class="tab" data-tab="Bridges"><span class="tabclose">&times;</span>Bridges</div>
-        <div class="tab" data-tab="General">General</div>
-        <div class="tab" data-tab="Distance">Distance</div>
-        <div class="tab active" data-tab="AC">AC</div>
-        <div class="tab" data-tab="Barcode">Barcode</div>
-        <div class="tab" data-tab="Sensor">Sensor Adj.</div>
-        <div class="tab" data-tab="Help">?</div>
-      </div>
-      <div class="panel-body" id="panel"><div class="empty">Upload a machine PDF to see its values.</div></div>
-    </div>
-  </div>
-  <div class="btnbar">
-    <div class="mbtn">Exit <b>(F4)</b></div><div class="mbtn">Evaluation <b>(F5)</b></div>
-    <div class="mbtn">Adjustment <b>(F6)</b></div><div class="mbtn">Login/Out <b>(F7)</b></div>
-    <div class="mbtn" id="fkey_settings" style="cursor:pointer;">Settings <b>(F8)</b></div><div class="mbtn" id="fkey_eval" style="cursor:pointer;">Evaluation <b>(F5)</b></div>
-    <div class="mbtn" id="fkey_project" style="cursor:pointer;">Project <b>(F9)</b></div><div class="mbtn">Graph</div>
-  </div>
-</div>
-<div class="hint" id="hint">Upload a machine PDF to begin.</div>
-<script>
-if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }
-var DATA={header:{},settings:[],settings2:[],pbh:[],dist:[],bridges:[],idcomments:[],eval_kv:[],eval_rows:[],general:[],sensor:[],ac:[],barcode:[],project:[],sensorNames:["L1","AP-L1"]};
-function setStatus(t){ var el=document.getElementById("upStatus"); if(el) el.textContent=t; }
-function at(cells,x,tol){ tol=tol||14; var best=null,bd=999; cells.forEach(function(c){var d=Math.abs(c.x-x); if(d<=tol&&d<bd){bd=d;best=c;}}); return best?best.s:''; }
-function rnd(v){ var n=parseFloat(v); if(isNaN(n))return v; return (Math.round(n*100)/100).toString(); }
-function esc(s){ return (s==null?'':(''+s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+<body>
+
+<div class="toolbar">
+
+  <button class="up-btn" id="uploadBtn">
+    Upload Machine
+  </button>
+
+  <button class="up-btn"
+          id="editBtn"
+          style="background:#b26a00;display:none;">
+    Edit Values
+  </button>
+
+  <button class="up-btn"
+          id="exitBtn"
+          style="background:#16803c;display:none;">
+    Save &amp; Exit
+  </button>
+
+  <!-- PDF / ZIP selector -->
+  <input type="file"
+         id="pdfInput"
+         accept=".pdf,.zip,application/pdf,application/zip"
+         style="display:none;">
+
+  <!-- Folder selector -->
+  <input type="file"
+         id="folderInput"
+         webkitdirectory
+         multiple
+         style="display:none;">
+
+  <span class="up-status" id="upStatus">
+    Upload a machine PDF, ZIP file, or machine folder.
+  </span>
+
+</div>
+
+<div class="machine">
+
+  <div class="titlebar">
+    <span>
+      Laser - Sensor - Control - Technology 6.0 MC —
+      <span class="brand">JENOPTIK-VOTAN&reg; A408</span>
+    </span>
+
+    <span style="opacity:.6;">laser ready</span>
+  </div>
+
+  <div class="menubar">
+    <span>File</span>
+    <span>Functions</span>
+    <span>Help</span>
+    <span>Shift Counter</span>
+    <span>Exit</span>
+    <span>Language</span>
+  </div>
+
+  <div class="rec-head">
+
+    <div class="rec-line">
+      <label>Data Record title</label>
+      <div class="rec-val" id="dr_title">—</div>
+    </div>
+
+    <div class="rec-line">
+      <label>Data Record number</label>
+      <div class="rec-val" id="dr_number">—</div>
+    </div>
+
+  </div>
+
+  <div class="toprow">
+
+    <div class="cell">
+      <span class="onpill">ON</span>
+      Show only parameterized ID's
+    </div>
+
+    <div class="cell">
+      Switch off value P1 (V)
+      <span class="mini" id="so_p1">—</span>
+    </div>
+
+    <div class="cell">
+      Switch off value P2 (V)
+      <span class="mini" id="so_p2">—</span>
+    </div>
+
+    <div class="cell">
+      No. of attenuators
+      <span class="mini" id="attn">—</span>
+      <span class="offpill">OFF</span>
+      Choice by robot
+    </div>
+
+  </div>
+
+  <div class="body">
+
+    <div class="frame">
+
+      <div class="frame-title">
+        Reference hole
+      </div>
+
+      <div style="padding:7px;overflow-x:auto;">
+
+        <table class="rh">
+
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Distance<br>(ms)</th>
+              <th>Amplic.<br>WS %</th>
+              <th>Power<br>P1 %</th>
+              <th>Pulses P1<br>(start no.)</th>
+              <th>Pulses P1<br>control</th>
+              <th>Power<br>P2 %</th>
+              <th>Pulses P2<br>(max. no.)</th>
+              <th>Load<br>new</th>
+            </tr>
+          </thead>
+
+          <tbody id="rh_body"></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+    <div class="frame tabwrap">
+
+      <div class="tabs" id="tabs">
+
+        <div class="tab" data-tab="SH1">
+          <span class="tabclose">&times;</span>SH 1
+        </div>
+
+        <div class="tab" data-tab="SH2">
+          <span class="tabclose">&times;</span>SH 2
+        </div>
+
+        <div class="tab" data-tab="PBH">
+          <span class="tabclose">&times;</span>PBH
+        </div>
+
+        <div class="tab" data-tab="Bridges">
+          <span class="tabclose">&times;</span>Bridges
+        </div>
+
+        <div class="tab" data-tab="General">
+          General
+        </div>
+
+        <div class="tab" data-tab="Distance">
+          Distance
+        </div>
+
+        <div class="tab active" data-tab="AC">
+          AC
+        </div>
+
+        <div class="tab" data-tab="Barcode">
+          Barcode
+        </div>
+
+        <div class="tab" data-tab="Sensor">
+          Sensor Adj.
+        </div>
+
+        <div class="tab" data-tab="Help">
+          ?
+        </div>
+
+      </div>
+
+      <div class="panel-body" id="panel">
+        <div class="empty">
+          Upload a machine PDF to see its values.
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="btnbar">
+
+    <div class="mbtn">
+      Exit <b>(F4)</b>
+    </div>
+
+    <div class="mbtn">
+      Evaluation <b>(F5)</b>
+    </div>
+
+    <div class="mbtn">
+      Adjustment <b>(F6)</b>
+    </div>
+
+    <div class="mbtn">
+      Login/Out <b>(F7)</b>
+    </div>
+
+    <div class="mbtn"
+         id="fkey_settings"
+         style="cursor:pointer;">
+      Settings <b>(F8)</b>
+    </div>
+
+    <div class="mbtn"
+         id="fkey_eval"
+         style="cursor:pointer;">
+      Evaluation <b>(F5)</b>
+    </div>
+
+    <div class="mbtn"
+         id="fkey_project"
+         style="cursor:pointer;">
+      Project <b>(F9)</b>
+    </div>
+
+    <div class="mbtn">
+      Graph
+    </div>
+
+  </div>
+
+</div>
+
+<div class="hint" id="hint">
+  Upload a machine PDF to begin.
+</div>
+
+
+<script>
+
+if(window.pdfjsLib){
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+}
+
+
+/* =========================================================
+   DATA
+   ========================================================= */
+
+var DATA={
+  header:{},
+  settings:[],
+  settings2:[],
+  pbh:[],
+  dist:[],
+  bridges:[],
+  idcomments:[],
+  eval_kv:[],
+  eval_rows:[],
+  general:[],
+  sensor:[],
+  ac:[],
+  barcode:[],
+  project:[],
+  sensorNames:["L1","AP-L1"]
+};
+
+
+/* =========================================================
+   COMMON HELPERS
+   ========================================================= */
+
+function setStatus(t){
+
+  var el=document.getElementById("upStatus");
+
+  if(el){
+    el.textContent=t;
+  }
+
+}
+
+function at(cells,x,tol){
+
+  tol=tol||14;
+
+  var best=null;
+  var bd=999;
+
+  cells.forEach(function(c){
+
+    var d=Math.abs(c.x-x);
+
+    if(d<=tol && d<bd){
+
+      bd=d;
+      best=c;
+
+    }
+
+  });
+
+  return best?best.s:'';
+
+}
+
+function rnd(v){
+
+  var n=parseFloat(v);
+
+  if(isNaN(n)){
+    return v;
+  }
+
+  return (Math.round(n*100)/100).toString();
+
+}
+
+function esc(s){
+
+  return (s==null?'':(''+s))
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+
+}
+
+
+/* =========================================================
+   PARSER
+   ========================================================= */
 
 function parseAll(p1rows, p2rows, p3rows){
-  var d={header:{},settings:[],settings2:[],pbh:[],dist:[],bridges:[],idcomments:[],eval_kv:[],eval_rows:[],general:[],sensor:[],ac:[],barcode:[],project:[],sensorNames:["L1","AP-L1"]};
+
+  var d={
+    header:{},
+    settings:[],
+    settings2:[],
+    pbh:[],
+    dist:[],
+    bridges:[],
+    idcomments:[],
+    eval_kv:[],
+    eval_rows:[],
+    general:[],
+    sensor:[],
+    ac:[],
+    barcode:[],
+    project:[],
+    sensorNames:["L1","AP-L1"]
+  };
+
 
   /* header */
-  var p1lines = p1rows.map(function(r){ return r.cells.map(function(c){return c.s;}).join(" | "); });
+
+  var p1lines=p1rows.map(function(r){
+
+    return r.cells.map(function(c){
+      return c.s;
+    }).join(" | ");
+
+  });
+
   var titleLine=p1lines[0]||"";
+
   var t=titleLine.split(" - ");
+
   d.header.number=t[0]?t[0].trim():"";
+
   var rawTitle=(t.length>1?t.slice(1).join(" - "):"");
-  var mm=rawTitle.match(/\b(A\d+)\b/); d.header.machine=mm?mm[1]:"";
-  rawTitle=rawTitle.replace(/\s*A\d+\b.*$/,"").trim().replace(/\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/,"").trim();
+
+  var mm=rawTitle.match(/\b(A\d+)\b/);
+
+  d.header.machine=mm?mm[1]:"";
+
+  rawTitle=rawTitle
+    .replace(/\s*\*A\d+\b.*$/,"")
+    .trim()
+    .replace(/\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/,"")
+    .trim();
+
   d.header.title=rawTitle||"(no title)";
 
-  /* sensor names: detect the two column headers directly (Qx-L1 / Qx-AP-L1 / MCT-L1 etc.) */
+
+  /* sensor names */
+
   var snFound=[];
+
   p1lines.forEach(function(line){
-    var toks=line.split("|").map(function(s){return s.trim();});
-    toks.forEach(function(tk){
-      if(/^(Qx|MCT)-L\d+$/.test(tk) || /^(Qx|MCT)-AP-L\d+$/.test(tk)){
-        if(snFound.indexOf(tk)<0) snFound.push(tk);
-      }
+
+    var toks=line.split("|").map(function(s){
+      return s.trim();
     });
-  });
-  if(snFound.length>=2) d.sensorNames=snFound.slice(0,2);
-  else if(snFound.length===1) d.sensorNames=[snFound[0],snFound[0]];
 
-  /* General parameter (left col of page1) */
-  var genLabels=["Switch off value P1 (V)","Switch off value P2 (V)","No. of attenuators","Choice by robot","MCT sensor","DP: Max. number > 10V","Delay holes","Max. number of holes","Target range pulses P2 min.","Target range pulses P2 max.","Start at signal RS V","Amplification RS %","Focus distance control","Hole aperture"];
-  p1rows.forEach(function(r){
-    var left = r.cells.filter(function(c){return c.x<170;});
-    if(left.length>=2){
-      var lbl=left[0].s, val=left[left.length-1].s;
-      genLabels.forEach(function(gl){
-        if(lbl===gl){ d.general.push([gl,val]);
-          if(gl==="Switch off value P1 (V)")d.header.switch_off_p1=val;
-          if(gl==="Switch off value P2 (V)")d.header.switch_off_p2=val;
-          if(gl==="No. of attenuators")d.header.attenuators=val;
+    toks.forEach(function(tk){
+
+      if(
+        /^(Qx|MCT)-L\d+$/.test(tk) ||
+        /^(Qx|MCT)-AP-L\d+$/.test(tk)
+      ){
+
+        if(snFound.indexOf(tk)<0){
+          snFound.push(tk);
         }
-      });
-    }
-  });
 
-  /* Sensor adjustment (right col page1): label val1 val2 */
-  var saLabels=["Amplification WS %","Amplification RS %","Number of pulses","Power %","Frequency Hz","Duty cycle %","Channel 1 Nom. AS","Channel 2 Nom. AS","Channel 3 Nom. AS","Channel 4 Nom. AS","Sum Nom. AS","Tolerance +/-","Nom. WS/RS","Tolerance WS/RS"];
-  p1rows.forEach(function(r){
-    var lblCell=r.cells.filter(function(c){return c.x>=190&&c.x<320;});
-    var v1=at(r.cells,335,18), v2=at(r.cells,395,18);
-    if(lblCell.length){ var lb=lblCell[lblCell.length-1].s;
-      saLabels.forEach(function(sl){ if(lb===sl && v1!==""){ d.sensor.push([sl,v1,v2!==""?v2:v1]); } });
-    }
-  });
-
-  /* Additional Cut (left col, between 'Additional cut' and next section) */
-  var acLabels=["Power %","Frequency Hz","Duty cycle %","On time ms","Off time ms","Start at signal reference sensor V","Amplification reference sensor %","Minimum number of sections","Target integral"];
-  var inAC=false,seen={};
-  p1rows.forEach(function(r){
-    var joined=r.cells.map(function(c){return c.s;}).join(" ");
-    if(joined.indexOf("Additional cut")===0){inAC=true;return;}
-    if(joined.indexOf("Barcode")===0){inAC=false;}
-    if(inAC){
-      var left=r.cells.filter(function(c){return c.x<170;});
-      if(left.length>=2){ var lb=left[0].s, val=left[left.length-1].s;
-        acLabels.forEach(function(al){ if(lb===al && !seen[al] && /^-?[\d.]+$/.test(val)){ d.ac.push([al,val]); seen[al]=1; } });
       }
-    }
+
+    });
+
   });
 
-  /* Project information (Company/Title/Worker/Material/Task/Optics/Robot/Information ID) */
-  var projLabels=["Company","Title","Worker","Material","Task","Optics/laser","Robot program","Information ID"];
+  if(snFound.length>=2){
+
+    d.sensorNames=snFound.slice(0,2);
+
+  }
+  else if(snFound.length===1){
+
+    d.sensorNames=[snFound[0],snFound[0]];
+
+  }
+
+
+  /* General parameter */
+
+  var genLabels=[
+    "Switch off value P1 (V)",
+    "Switch off value P2 (V)",
+    "No. of attenuators",
+    "Choice by robot",
+    "MCT sensor",
+    "DP: Max. number > 10V",
+    "Delay holes",
+    "Max. number of holes",
+    "Target range pulses P2 min.",
+    "Target range pulses P2 max.",
+    "Start at signal RS V",
+    "Amplification RS %",
+    "Focus distance control",
+    "Hole aperture"
+  ];
+
   p1rows.forEach(function(r){
-    var right=r.cells.filter(function(c){return c.x>=195;});
-    if(right.length){ var lb=right[0].s; var val=right.length>1?right[right.length-1].s:"—";
-      projLabels.forEach(function(pl){ if(lb===pl){ d.project.push([pl, (val===lb?"—":val)]); } });
+
+    var left=r.cells.filter(function(c){
+      return c.x<170;
+    });
+
+    if(left.length>=2){
+
+      var lbl=left[0].s;
+      var val=left[left.length-1].s;
+
+      genLabels.forEach(function(gl){
+
+        if(lbl===gl){
+
+          d.general.push([gl,val]);
+
+          if(gl==="Switch off value P1 (V)")
+            d.header.switch_off_p1=val;
+
+          if(gl==="Switch off value P2 (V)")
+            d.header.switch_off_p2=val;
+
+          if(gl==="No. of attenuators")
+            d.header.attenuators=val;
+
+        }
+
+      });
+
     }
+
   });
+
+
+  /* Sensor adjustment */
+
+  var saLabels=[
+    "Amplification WS %",
+    "Amplification RS %",
+    "Number of pulses",
+    "Power %",
+    "Frequency Hz",
+    "Duty cycle %",
+    "Channel 1 Nom. AS",
+    "Channel 2 Nom. AS",
+    "Channel 3 Nom. AS",
+    "Channel 4 Nom. AS",
+    "Sum Nom. AS",
+    "Tolerance +/-",
+    "Nom. WS/RS",
+    "Tolerance WS/RS"
+  ];
+
+  p1rows.forEach(function(r){
+
+    var lblCell=r.cells.filter(function(c){
+      return c.x>=190&&c.x<320;
+    });
+
+    var v1=at(r.cells,335,18);
+    var v2=at(r.cells,395,18);
+
+    if(lblCell.length){
+
+      var lb=lblCell[lblCell.length-1].s;
+
+      saLabels.forEach(function(sl){
+
+        if(lb===sl && v1!==""){
+
+          d.sensor.push([
+            sl,
+            v1,
+            v2!==""?v2:v1
+          ]);
+
+        }
+
+      });
+
+    }
+
+  });
+
+
+  /* Additional Cut */
+
+  var acLabels=[
+    "Power %",
+    "Frequency Hz",
+    "Duty cycle %",
+    "On time ms",
+    "Off time ms",
+    "Start at signal reference sensor V",
+    "Amplification reference sensor %",
+    "Minimum number of sections",
+    "Target integral"
+  ];
+
+  var inAC=false;
+  var seen={};
+
+  p1rows.forEach(function(r){
+
+    var joined=r.cells.map(function(c){
+      return c.s;
+    }).join(" ");
+
+    if(joined.indexOf("Additional cut")===0){
+      inAC=true;
+      return;
+    }
+
+    if(joined.indexOf("Barcode")===0){
+      inAC=false;
+    }
+
+    if(inAC){
+
+      var left=r.cells.filter(function(c){
+        return c.x<170;
+      });
+
+      if(left.length>=2){
+
+        var lb=left[0].s;
+        var val=left[left.length-1].s;
+
+        acLabels.forEach(function(al){
+
+          if(
+            lb===al &&
+            !seen[al] &&
+            /^-?[\d.]+$/.test(val)
+          ){
+
+            d.ac.push([al,val]);
+            seen[al]=1;
+
+          }
+
+        });
+
+      }
+
+    }
+
+  });
+
+
+  /* Project */
+
+  var projLabels=[
+    "Company",
+    "Title",
+    "Worker",
+    "Material",
+    "Task",
+    "Optics/laser",
+    "Robot program",
+    "Information ID"
+  ];
+
+  p1rows.forEach(function(r){
+
+    var right=r.cells.filter(function(c){
+      return c.x>=195;
+    });
+
+    if(right.length){
+
+      var lb=right[0].s;
+      var val=right.length>1?
+        right[right.length-1].s:
+        "—";
+
+      projLabels.forEach(function(pl){
+
+        if(lb===pl){
+
+          d.project.push([
+            pl,
+            val===lb?"—":val
+          ]);
+
+        }
+
+      });
+
+    }
+
+  });
+
 
   /* Barcode */
-  var bcMode=["Without","Read","Print","Read and print"];
-  var bcPrinter=["Standard","Sato","Zebra/TSC","TSC (TCP/IP)"];
-  var bcFlags=["Check barcode length","Barcode length","Actual file"];
-  d.bc_mode=[]; d.bc_printer=[]; d.bc_flags=[];
+
+  var bcMode=[
+    "Without",
+    "Read",
+    "Print",
+    "Read and print"
+  ];
+
+  var bcPrinter=[
+    "Standard",
+    "Sato",
+    "Zebra/TSC",
+    "TSC (TCP/IP)"
+  ];
+
+  var bcFlags=[
+    "Check barcode length",
+    "Barcode length",
+    "Actual file"
+  ];
+
+  d.bc_mode=[];
+  d.bc_printer=[];
+  d.bc_flags=[];
+
   var inBC=false;
+
   p1rows.forEach(function(r){
-    var joined=r.cells.map(function(c){return c.s;}).join(" ");
-    if(joined.indexOf("Barcode")===0){inBC=true;}
-    if(inBC){
-      var left=r.cells.filter(function(c){return c.x<170;});
-      if(left.length){ var lb=left[0].s, val=left.length>1?left[left.length-1].s:"—"; if(val===lb)val="—";
-        bcMode.forEach(function(x){ if(lb===x)d.bc_mode.push([x,val]); });
-        bcPrinter.forEach(function(x){ if(lb===x)d.bc_printer.push([x,val]); });
-        bcFlags.forEach(function(x){ if(lb===x)d.bc_flags.push([x,val]); });
-      }
+
+    var joined=r.cells.map(function(c){
+      return c.s;
+    }).join(" ");
+
+    if(joined.indexOf("Barcode")===0){
+      inBC=true;
     }
+
+    if(inBC){
+
+      var left=r.cells.filter(function(c){
+        return c.x<170;
+      });
+
+      if(left.length){
+
+        var lb=left[0].s;
+        var val=left.length>1?
+          left[left.length-1].s:
+          "—";
+
+        if(val===lb)
+          val="—";
+
+        bcMode.forEach(function(x){
+
+          if(lb===x)
+            d.bc_mode.push([x,val]);
+
+        });
+
+        bcPrinter.forEach(function(x){
+
+          if(lb===x)
+            d.bc_printer.push([x,val]);
+
+        });
+
+        bcFlags.forEach(function(x){
+
+          if(lb===x)
+            d.bc_flags.push([x,val]);
+
+        });
+
+      }
+
+    }
+
   });
-  d.bc_const=[["Const. parameter 1","—"],["Const. parameter 2","—"],["Const. parameter 3","—"],["Const. parameter 4","—"],["Const. parameter 5","—"]];
+
+  d.bc_const=[
+    ["Const. parameter 1","—"],
+    ["Const. parameter 2","—"],
+    ["Const. parameter 3","—"],
+    ["Const. parameter 4","—"],
+    ["Const. parameter 5","—"]
+  ];
+
   d.bc_printing="—";
 
-  /* ID Comments (page1: pairs of ID number then comment, appear as standalone 0-9) */
-  /* handled by scanning for 'ID | Comments on ID' then digit rows - but they interleave with barcode; capture 0-9 as ids */
-  /* We'll just present ID 0-9 with any comment text if present */
-  var idc=[]; var idcSeen={};
+
+  /* ID Comments */
+
+  var idc=[];
+  var idcSeen={};
+
   p1rows.forEach(function(r){
-    var mid=r.cells.filter(function(c){return c.x>=195&&c.x<260;});
-    if(mid.length){ var v=mid[0].s;
-      if(/^[0-9]$/.test(v) && !idcSeen[v]){ var comment=mid.length>1?mid[mid.length-1].s:"—"; if(comment===v)comment="—"; idc.push([v,comment]); idcSeen[v]=1; }
+
+    var mid=r.cells.filter(function(c){
+      return c.x>=195&&c.x<260;
+    });
+
+    if(mid.length){
+
+      var v=mid[0].s;
+
+      if(/^[0-9]$/.test(v)&&!idcSeen[v]){
+
+        var comment=mid.length>1?
+          mid[mid.length-1].s:
+          "—";
+
+        if(comment===v)
+          comment="—";
+
+        idc.push([v,comment]);
+        idcSeen[v]=1;
+
+      }
+
     }
+
   });
-  if(!idc.length){ for(var n=0;n<=9;n++){ idc.push([n.toString(),"—"]); } }
-  idc.sort(function(a,b){return parseInt(a[0])-parseInt(b[0]);});
+
+  if(!idc.length){
+
+    for(var n=0;n<=9;n++){
+      idc.push([n.toString(),"—"]);
+    }
+
+  }
+
+  idc.sort(function(a,b){
+    return parseInt(a[0])-parseInt(b[0]);
+  });
+
   d.idcomments=idc;
 
-  /* ---------- PAGE 2 ---------- */
+
+  /* PAGE 2 */
+
   p2rows.forEach(function(r){
+
     var c=r.cells;
-    var id=at(c,19,6), distc=at(c,39,8);
-    /* Settings F8 main table: id 0-9 at x19, decimal distance at x39, amplific at x80 */
-    if(/^[0-9]$/.test(id) && /^\d+\.\d$/.test(distc) && d.settings.length<10){
-      d.settings.push({id:id,dist:distc,amp:at(c,80),p1:at(c,121),dcp1:at(c,162),pulses1:at(c,203),
-        ctrl:at(c,244),p2:at(c,285),dcp2:at(c,326),pulses2:at(c,367),load:at(c,408),
-        usefile:at(c,449),shactive:at(c,490),numrh:at(c,531),distsh:at(c,572),numsh:at(c,613),
-        shpower:at(c,654),shdc:at(c,695),shpulses:at(c,736)});
+
+    var id=at(c,19,6);
+    var distc=at(c,39,8);
+
+    if(
+      /^[0-9]$/.test(id) &&
+      /^\d+\.\d$/.test(distc) &&
+      d.settings.length<10
+    ){
+
+      d.settings.push({
+        id:id,
+        dist:distc,
+        amp:at(c,80),
+        p1:at(c,121),
+        dcp1:at(c,162),
+        pulses1:at(c,203),
+        ctrl:at(c,244),
+        p2:at(c,285),
+        dcp2:at(c,326),
+        pulses2:at(c,367),
+        load:at(c,408),
+        usefile:at(c,449),
+        shactive:at(c,490),
+        numrh:at(c,531),
+        distsh:at(c,572),
+        numsh:at(c,613),
+        shpower:at(c,654),
+        shdc:at(c,695),
+        shpulses:at(c,736)
+      });
+
     }
-    /* Settings table 2: id@19, Control power SH@39(disabled/enabled), Target integral@80, Delay SH@121, Delay RH@162 -- BUT only when x39 is disabled/enabled (not decimal) AND there is PBH data on same row */
+
     var s2ctrl=at(c,39,8);
-    if(/^[0-9]$/.test(id) && (s2ctrl==="disabled"||s2ctrl==="enabled") && d.settings2.length<10){
-      d.settings2.push([id,s2ctrl,at(c,80),at(c,121),at(c,162)]);
+
+    if(
+      /^[0-9]$/.test(id) &&
+      (s2ctrl==="disabled"||s2ctrl==="enabled") &&
+      d.settings2.length<10
+    ){
+
+      d.settings2.push([
+        id,
+        s2ctrl,
+        at(c,80),
+        at(c,121),
+        at(c,162)
+      ]);
+
     }
-    /* PBH: id@208, active@228 */
-    var pid=at(c,208,8), pactive=at(c,228,10);
-    if(/^[0-9]$/.test(pid) && (pactive==="disabled"||pactive==="enabled") && d.pbh.length<10){
-      d.pbh.push([pid,pactive,at(c,269),at(c,310),at(c,351),at(c,392),at(c,433,12),at(c,474,10)]);
+
+    var pid=at(c,208,8);
+    var pactive=at(c,228,10);
+
+    if(
+      /^[0-9]$/.test(pid) &&
+      (pactive==="disabled"||pactive==="enabled") &&
+      d.pbh.length<10
+    ){
+
+      d.pbh.push([
+        pid,
+        pactive,
+        at(c,269),
+        at(c,310),
+        at(c,351),
+        at(c,392),
+        at(c,433,12),
+        at(c,474,10)
+      ]);
+
     }
-    /* Distance: id@520, calc@540, value@581 must be a proper decimal (reject split garbage) */
-    var did=at(c,520,8), calc=at(c,540,12), dval=at(c,581,20);
-    if(/^[0-9]$/.test(did) && (calc==="enabled"||calc==="disabled") && /^[0-9]+\.[0-9]+$/.test(dval) && d.dist.length<10){
-      d.dist.push([did,calc,rnd(dval),at(c,622,10),at(c,663,10)]);
+
+    var did=at(c,520,8);
+    var calc=at(c,540,12);
+    var dval=at(c,581,20);
+
+    if(
+      /^[0-9]$/.test(did) &&
+      (calc==="enabled"||calc==="disabled") &&
+      /^[0-9]+\.[0-9]+$/.test(dval) &&
+      d.dist.length<10
+    ){
+
+      d.dist.push([
+        did,
+        calc,
+        rnd(dval),
+        at(c,622,10),
+        at(c,663,10)
+      ]);
+
     }
-  });
-  /* Bridges: rows with only 3 cells id@19 on@39 off@80, appear after settings blocks (no decimal, no disabled) */
-  var pastBridgeHdr=false;
-  p2rows.forEach(function(r){
-    var c=r.cells;
-    var txt=c.map(function(x){return x.s;}).join(" ");
-    if(/holes on/.test(txt)) pastBridgeHdr=true;
-    if(pastBridgeHdr && c.length===3){
-      var id=at(c,19,6),on=at(c,39,8),off=at(c,80,8);
-      if(/^[0-9]$/.test(id) && /^\d+$/.test(on) && /^\d+$/.test(off) && d.bridges.length<10) d.bridges.push([id,on,off]);
-    }
+
   });
 
-  /* ---------- PAGE 3 Evaluation ---------- */
-  /* Evaluation: X-position based. Left col: label@15 value@250. Right col: label@300 value@500. */
-  var inEval=false, evalTableStarted=false;
+
+  /* Bridges */
+
+  var pastBridgeHdr=false;
+
+  p2rows.forEach(function(r){
+
+    var c=r.cells;
+
+    var txt=c.map(function(x){
+      return x.s;
+    }).join(" ");
+
+    if(/holes on/.test(txt))
+      pastBridgeHdr=true;
+
+    if(pastBridgeHdr&&c.length===3){
+
+      var id=at(c,19,6);
+      var on=at(c,39,8);
+      var off=at(c,80,8);
+
+      if(
+        /^[0-9]$/.test(id) &&
+        /^\d+$/.test(on) &&
+        /^\d+$/.test(off) &&
+        d.bridges.length<10
+      ){
+
+        d.bridges.push([id,on,off]);
+
+      }
+
+    }
+
+  });
+
+
+  /* PAGE 3 Evaluation */
+
+  var inEval=false;
+  var evalTableStarted=false;
+
   (p3rows||[]).forEach(function(r){
-    var joined=r.cells.map(function(c){return c.s;}).join(" ");
-    if(joined.indexOf("Evaluation (F5)")===0){inEval=true;return;}
-    if(!inEval) return;
-    /* once the per-ID table header appears, stop all kv capture */
-    if((/^ID\b/.test(joined) && /Max\./.test(joined)) || /Fault type/.test(joined)) { evalTableStarted=true; }
-    if(evalTableStarted) return;
-    /* left column pair */
-    var lLbl=r.cells.filter(function(c){return c.x<260;});
+
+    var joined=r.cells.map(function(c){
+      return c.s;
+    }).join(" ");
+
+    if(joined.indexOf("Evaluation (F5)")===0){
+      inEval=true;
+      return;
+    }
+
+    if(!inEval)
+      return;
+
+    if(
+      (/^ID\b/.test(joined)&&/Max\./.test(joined)) ||
+      /Fault type/.test(joined)
+    ){
+
+      evalTableStarted=true;
+
+    }
+
+    if(evalTableStarted)
+      return;
+
+    var lLbl=r.cells.filter(function(c){
+      return c.x<260;
+    });
+
     if(lLbl.length>=2){
-      var lb=lLbl[0].s, val=lLbl[lLbl.length-1].s;
-      if(lb!==val && /^(-?[\d.]+|active|inactive|enabled|disabled)$/.test(val)){ d.eval_kv.push([lb,val]); }
+
+      var lb=lLbl[0].s;
+      var val=lLbl[lLbl.length-1].s;
+
+      if(
+        lb!==val &&
+        /^(-?[\d.]+|active|inactive|enabled|disabled)$/.test(val)
+      ){
+
+        d.eval_kv.push([lb,val]);
+
+      }
+
     }
-    /* right column pair (label near x300, value near x500) */
-    var rLbl=r.cells.filter(function(c){return c.x>=290;});
+
+    var rLbl=r.cells.filter(function(c){
+      return c.x>=290;
+    });
+
     if(rLbl.length>=2){
-      var rb=rLbl[0].s, rv=rLbl[rLbl.length-1].s;
-      if(rb!==rv && /^(-?[\d.]+|active|inactive|enabled|disabled)$/.test(rv)){ d.eval_kv.push([rb,rv]); }
+
+      var rb=rLbl[0].s;
+      var rv=rLbl[rLbl.length-1].s;
+
+      if(
+        rb!==rv &&
+        /^(-?[\d.]+|active|inactive|enabled|disabled)$/.test(rv)
+      ){
+
+        d.eval_kv.push([rb,rv]);
+
+      }
+
     }
+
   });
-  /* Evaluation per-ID table: id@19 + 6 numbers */
+
+
+  /* Evaluation per-ID table */
+
   (p3rows||[]).forEach(function(r){
+
     var id=at(r.cells,19,6);
-    var nums=r.cells.filter(function(c){return c.x>40;}).map(function(c){return c.s;}).filter(function(s){return /^-?\d+$/.test(s);});
-    if(/^[0-9]$/.test(id) && nums.length>=6 && d.eval_rows.length<10){
-      d.eval_rows.push([id].concat(nums.slice(0,6)));
+
+    var nums=r.cells
+      .filter(function(c){
+        return c.x>40;
+      })
+      .map(function(c){
+        return c.s;
+      })
+      .filter(function(s){
+        return /^-?\d+$/.test(s);
+      });
+
+    if(
+      /^[0-9]$/.test(id) &&
+      nums.length>=6 &&
+      d.eval_rows.length<10
+    ){
+
+      d.eval_rows.push([
+        id
+      ].concat(nums.slice(0,6)));
+
     }
+
   });
+
 
   return d;
+
 }
 
+
+/* =========================================================
+   PDF READER
+   ========================================================= */
 
 async function readPDF(buf){
-  var pdf=await pdfjsLib.getDocument({data:buf}).promise;
-  var p1=[],p3=[],p2rows=[];
+
+  var pdf=await pdfjsLib
+    .getDocument({data:buf})
+    .promise;
+
+  var p1=[];
+  var p3=[];
+  var p2rows=[];
+
   for(var i=1;i<=pdf.numPages;i++){
-    var page=await pdf.getPage(i); var tc=await page.getTextContent();
-    var items=tc.items.map(function(it){return {s:it.str.trim(),x:Math.round(it.transform[4]),y:Math.round(it.transform[5])};}).filter(function(it){return it.s!=="";});
-    var byY={}; items.forEach(function(it){(byY[it.y]=byY[it.y]||[]).push(it);});
-    var ys=Object.keys(byY).map(Number).sort(function(a,b){return b-a;});
-    if(i===1)p1=ys.map(function(y){return {y:y,cells:byY[y].sort(function(a,b){return a.x-b.x;})};});
-    if(i===2)p2rows=ys.map(function(y){return {y:y,cells:byY[y].sort(function(a,b){return a.x-b.x;})};});
-    if(i===3)p3=ys.map(function(y){return {y:y,cells:byY[y].sort(function(a,b){return a.x-b.x;})};});
+
+    var page=await pdf.getPage(i);
+
+    var tc=await page.getTextContent();
+
+    var items=tc.items
+      .map(function(it){
+
+        return {
+          s:it.str.trim(),
+          x:Math.round(it.transform[4]),
+          y:Math.round(it.transform[5])
+        };
+
+      })
+      .filter(function(it){
+        return it.s!=="";
+      });
+
+    var byY={};
+
+    items.forEach(function(it){
+
+      (byY[it.y]=byY[it.y]||[]).push(it);
+
+    });
+
+    var ys=Object.keys(byY)
+      .map(Number)
+      .sort(function(a,b){
+        return b-a;
+      });
+
+    if(i===1){
+
+      p1=ys.map(function(y){
+
+        return {
+          y:y,
+          cells:byY[y].sort(function(a,b){
+            return a.x-b.x;
+          })
+        };
+
+      });
+
+    }
+
+    if(i===2){
+
+      p2rows=ys.map(function(y){
+
+        return {
+          y:y,
+          cells:byY[y].sort(function(a,b){
+            return a.x-b.x;
+          })
+        };
+
+      });
+
+    }
+
+    if(i===3){
+
+      p3=ys.map(function(y){
+
+        return {
+          y:y,
+          cells:byY[y].sort(function(a,b){
+            return a.x-b.x;
+          })
+        };
+
+      });
+
+    }
+
   }
-  return {p1:p1,p2rows:p2rows,p3:p3};
+
+  return {
+    p1:p1,
+    p2rows:p2rows,
+    p3:p3
+  };
+
 }
 
 
-/* ---------- process an ArrayBuffer (shared by upload + auto-load) ---------- */
+/* =========================================================
+   PROCESS PDF BUFFER
+   ========================================================= */
+
 var PDF_LOADED=false;
-async function processBuffer(buf, sourceName){
+
+async function processBuffer(buf,sourceName){
+
   setStatus("Reading "+sourceName+" …");
+
   try{
+
     var pg=await readPDF(buf);
-    DATA=parseAll(pg.p1,pg.p2rows,pg.p3);
+
+    DATA=parseAll(
+      pg.p1,
+      pg.p2rows,
+      pg.p3
+    );
+
     renderAll();
+
     PDF_LOADED=true;
-    var xb=document.getElementById('exitBtn'); if(xb) xb.style.display='inline-block';
-    var eb=document.getElementById('editBtn'); if(eb) eb.style.display='inline-block';
-    setStatus("Loaded: "+sourceName+(MACHINE_ID?"  — click Save Configuration to store it.":""));
-    document.getElementById('hint').textContent="Showing values from "+sourceName;
-  }catch(e){ setStatus("Error: "+e.message); }
+
+    var xb=document.getElementById('exitBtn');
+
+    if(xb)
+      xb.style.display='inline-block';
+
+    var eb=document.getElementById('editBtn');
+
+    if(eb)
+      eb.style.display='inline-block';
+
+    setStatus(
+      "Loaded: "+
+      sourceName+
+      (MACHINE_ID?
+        " — click Save Configuration to store it.":
+        "")
+    );
+
+    document.getElementById('hint').textContent=
+      "Showing values from "+sourceName;
+
+  }
+  catch(e){
+
+    console.error(e);
+
+    setStatus(
+      "Error: "+e.message
+    );
+
+  }
+
 }
 
-/* ---------- AUTO-LOAD from a Log record via ?recId= ---------- */
-var APP_OWNER="sarathynds_saryam", APP_NAME="jenoptik-logs";
-var PDF_FIELD="Machine_Data_Record", REPORT_NAME="Log_Report";
+
+/* =========================================================
+   AUTO LOAD FROM CREATOR RECORD
+   ========================================================= */
+
+var APP_OWNER="sarathynds_saryam";
+var APP_NAME="jenoptik-logs";
+var PDF_FIELD="Machine_Data_Record";
+var REPORT_NAME="Log_Report";
 
 async function autoLoadRecord(recId){
-  setStatus("Fetching record "+recId+" …");
+
+  setStatus(
+    "Fetching record "+recId+" …"
+  );
+
   try{
-    /* 1) get the record JSON to find the PDF file path */
-    var recUrl="https://creatorapp.zoho.com/api/v2.1/"+APP_OWNER+"/"+APP_NAME+"/report/"+REPORT_NAME+"/"+recId;
-    var recResp=await fetch(recUrl,{headers:{"Accept":"application/json"}});
-    if(!recResp.ok){ setStatus("Could not read record ("+recResp.status+"). Use Upload instead."); return; }
+
+    var recUrl=
+      "https://creatorapp.zoho.com/api/v2.1/"+
+      APP_OWNER+"/"+
+      APP_NAME+
+      "/report/"+
+      REPORT_NAME+"/"+
+      recId;
+
+    var recResp=await fetch(
+      recUrl,
+      {
+        headers:{
+          "Accept":"application/json"
+        }
+      }
+    );
+
+    if(!recResp.ok){
+
+      setStatus(
+        "Could not read record ("+
+        recResp.status+
+        "). Use Upload instead."
+      );
+
+      return;
+    }
+
     var recJson=await recResp.json();
+
     var data=recJson.data||recJson;
+
     var filePath=data[PDF_FIELD];
-    if(!filePath){ setStatus("No PDF in this record's "+PDF_FIELD+" field. Use Upload."); return; }
-    /* 2) fetch the actual PDF bytes */
-    var pdfUrl = filePath.indexOf("http")===0 ? filePath : ("https://creatorapp.zoho.com"+filePath);
+
+    if(!filePath){
+
+      setStatus(
+        "No PDF in this record's "+
+        PDF_FIELD+
+        " field. Use Upload."
+      );
+
+      return;
+    }
+
+    var pdfUrl=
+      filePath.indexOf("http")===0?
+      filePath:
+      "https://creatorapp.zoho.com"+filePath;
+
     var pdfResp=await fetch(pdfUrl);
-    if(!pdfResp.ok){ setStatus("Could not download the PDF ("+pdfResp.status+"). Use Upload."); return; }
+
+    if(!pdfResp.ok){
+
+      setStatus(
+        "Could not download the PDF ("+
+        pdfResp.status+
+        "). Use Upload instead."
+      );
+
+      return;
+    }
+
     var buf=await pdfResp.arrayBuffer();
-    await processBuffer(buf, "record "+recId);
-  }catch(e){
-    setStatus("Auto-load blocked (likely CORS). Use the Upload button. ["+e.message+"]");
+
+    await processBuffer(
+      buf,
+      "record "+recId
+    );
+
   }
+  catch(e){
+
+    setStatus(
+      "Auto-load blocked (likely CORS). Use the Upload button. ["+
+      e.message+
+      "]"
+    );
+
+  }
+
 }
 
 
-/* ---------- RENDER (machine-photo layout: left table + right tabs) ---------- */
+/* =========================================================
+   RENDER
+   ========================================================= */
+
 function renderHeader(){
+
   var h=DATA.header||{};
-  var ttl=(h.title||"—").replace(/\s*\|\s*$/,"").replace(/\|/g," ").trim();
-  document.getElementById('dr_title').textContent=ttl||"—";
-  document.getElementById('dr_number').textContent=h.number||"—";
-  document.getElementById('so_p1').textContent=h.switch_off_p1||"—";
-  document.getElementById('so_p2').textContent=h.switch_off_p2||"—";
-  document.getElementById('attn').textContent=h.attenuators||"—";
+
+  var ttl=(h.title||"—")
+    .replace(/\s*\||\s*$/,"")
+    .replace(/\|/g," ")
+    .trim();
+
+  document.getElementById('dr_title').textContent=
+    ttl||"—";
+
+  document.getElementById('dr_number').textContent=
+    h.number||"—";
+
+  document.getElementById('so_p1').textContent=
+    h.switch_off_p1||"—";
+
+  document.getElementById('so_p2').textContent=
+    h.switch_off_p2||"—";
+
+  document.getElementById('attn').textContent=
+    h.attenuators||"—";
+
 }
+
+
 function renderRefHoles(){
-  var b=document.getElementById('rh_body'); b.innerHTML='';
-  var rows = (DATA.settings&&DATA.settings.length)? DATA.settings : [];
+
+  var b=document.getElementById('rh_body');
+
+  b.innerHTML='';
+
+  var rows=
+    (DATA.settings&&DATA.settings.length)?
+    DATA.settings:
+    [];
+
   rows.forEach(function(r){
-    var ctrl=(r.ctrl==='enabled')?"<span class='onpill'>ON</span>":"<span class='offpill'>OFF</span>";
-    var load=(r.load==='enabled')?"<span class='onpill'>ON</span>":"<span class='offpill'>OFF</span>";
-    b.innerHTML+="<tr><td class='idcell'>"+r.id+"</td>"+
-      "<td><span class='box'>"+r.dist+"</span></td><td><span class='box'>"+r.amp+"</span></td>"+
-      "<td><span class='box'>"+r.p1+"</span></td><td><span class='box'>"+r.pulses1+"</span></td>"+
-      "<td>"+ctrl+"</td><td><span class='box'>"+r.p2+"</span></td>"+
-      "<td><span class='box'>"+r.pulses2+"</span></td><td>"+load+"</td></tr>";
+
+    var ctrl=
+      r.ctrl==='enabled'?
+      "<span class='onpill'>ON</span>":
+      "<span class='offpill'>OFF</span>";
+
+    var load=
+      r.load==='enabled'?
+      "<span class='onpill'>ON</span>":
+      "<span class='offpill'>OFF</span>";
+
+    b.innerHTML+=
+      "<tr>"+
+      "<td class='idcell'>"+r.id+"</td>"+
+      "<td><span class='box'>"+r.dist+"</span></td>"+
+      "<td><span class='box'>"+r.amp+"</span></td>"+
+      "<td><span class='box'>"+r.p1+"</span></td>"+
+      "<td><span class='box'>"+r.pulses1+"</span></td>"+
+      "<td>"+ctrl+"</td>"+
+      "<td><span class='box'>"+r.p2+"</span></td>"+
+      "<td><span class='box'>"+r.pulses2+"</span></td>"+
+      "<td>"+load+"</td>"+
+      "</tr>";
+
   });
+
 }
+
+
 function kvBlock(title,rows){
-  if(!rows||!rows.length) return "<div class='grp'><div class='grp-t'>"+title+"</div><div class='grp-b'><div class='empty'>No data.</div></div></div>";
-  var h="<div class='grp'><div class='grp-t'>"+title+"</div><div class='grp-b'>";
-  rows.forEach(function(r){ h+="<div class='kv'><span class='k'>"+esc(r[0])+"</span><span class='v'>"+esc(r[1])+"</span></div>"; });
-  return h+"</div></div>";
+
+  if(!rows||!rows.length){
+
+    return(
+      "<div class='grp'>"+
+      "<div class='grp-t'>"+title+"</div>"+
+      "<div class='grp-b'>"+
+      "<div class='empty'>No data.</div>"+
+      "</div>"+
+      "</div>"
+    );
+
+  }
+
+  var h=
+    "<div class='grp'>"+
+    "<div class='grp-t'>"+title+"</div>"+
+    "<div class='grp-b'>";
+
+  rows.forEach(function(r){
+
+    h+=
+      "<div class='kv'>"+
+      "<span class='k'>"+esc(r[0])+"</span>"+
+      "<span class='v'>"+esc(r[1])+"</span>"+
+      "</div>";
+
+  });
+
+  return h+
+    "</div>"+
+    "</div>";
+
 }
+
+
 function tblBlock(title,head,rows){
-  if(!rows||!rows.length) return "<div class='grp'><div class='grp-t'>"+title+"</div><div class='grp-b'><div class='empty'>No data.</div></div></div>";
-  var h="<div class='grp'><div class='grp-t'>"+title+"</div><div class='grp-b' style='overflow-x:auto;'><table class='subt'><tr>";
-  head.forEach(function(x){h+="<th>"+esc(x)+"</th>";}); h+="</tr>";
-  rows.forEach(function(row){ h+="<tr>"; row.forEach(function(c,i){ h+="<td class='"+(i===0?'idc':'')+"'>"+esc(c)+"</td>"; }); h+="</tr>"; });
-  return h+"</table></div></div>";
+
+  if(!rows||!rows.length){
+
+    return(
+      "<div class='grp'>"+
+      "<div class='grp-t'>"+title+"</div>"+
+      "<div class='grp-b'>"+
+      "<div class='empty'>No data.</div>"+
+      "</div>"+
+      "</div>"
+    );
+
+  }
+
+  var h=
+    "<div class='grp'>"+
+    "<div class='grp-t'>"+title+"</div>"+
+    "<div class='grp-b' style='overflow-x:auto;'>"+
+    "<table class='subt'>"+
+    "<tr>";
+
+  head.forEach(function(x){
+
+    h+="<th>"+esc(x)+"</th>";
+
+  });
+
+  h+="</tr>";
+
+  rows.forEach(function(row){
+
+    h+="<tr>";
+
+    row.forEach(function(c,i){
+
+      h+=
+        "<td class='"+(i===0?'idc':'')+"'>"+
+        esc(c)+
+        "</td>";
+
+    });
+
+    h+="</tr>";
+
+  });
+
+  return h+
+    "</table>"+
+    "</div>"+
+    "</div>";
+
 }
+
+
 function renderTab(name){
-  var p=document.getElementById('panel'); var h="";
+
+  var p=document.getElementById('panel');
+
+  var h="";
+
   if(name==='General'){
+
     h="<div class='panel-h'>General</div>";
-    /* per-hole DC P1 / DC P2 / Use file from settings */
-    h+=tblBlock("Per hole", ["ID","DC P1 %","DC P2 %","Use file"],
-      (DATA.settings||[]).map(function(s){return [s.id,s.dcp1,s.dcp2,s.usefile];}));
-    /* toggles + limits pulled from the General parameter block */
-    function gv(k){ var a=DATA.general||[]; for(var i=0;i<a.length;i++){ if(a[i][0]===k) return a[i][1]; } return "—"; }
+
+    h+=tblBlock(
+      "Per hole",
+      ["ID","DC P1 %","DC P2 %","Use file"],
+      (DATA.settings||[]).map(function(s){
+        return[
+          s.id,
+          s.dcp1,
+          s.dcp2,
+          s.usefile
+        ];
+      })
+    );
+
+    function gv(k){
+
+      var a=DATA.general||[];
+
+      for(var i=0;i<a.length;i++){
+
+        if(a[i][0]===k)
+          return a[i][1];
+
+      }
+
+      return "—";
+
+    }
+
     var toggles=[
-      ["MCT sensor active", gv("MCT sensor")],
-      ["Hole aperture active", gv("Hole aperture")],
-      ["Focus distance control active", gv("Focus distance control")]
+      ["MCT sensor active",gv("MCT sensor")],
+      ["Hole aperture active",gv("Hole aperture")],
+      ["Focus distance control active",gv("Focus distance control")]
     ];
-    h+=kvBlock("Settings", toggles);
+
+    h+=kvBlock(
+      "Settings",
+      toggles
+    );
+
     var limits=[
-      ["Max. number of holes", gv("Max. number of holes")],
-      ["Delay holes", gv("Delay holes")],
-      ["Software destroy protection (max. holes in a row, WS>10V)", gv("DP: Max. number > 10V")]
+      ["Max. number of holes",gv("Max. number of holes")],
+      ["Delay holes",gv("Delay holes")],
+      ["Software destroy protection (max. holes in a row, WS>10V)",gv("DP: Max. number > 10V")]
     ];
-    h+=kvBlock("Limits", limits);
+
+    h+=kvBlock(
+      "Limits",
+      limits
+    );
+
     var cp=[
-      ["Target range pulses P2 min.", gv("Target range pulses P2 min.")],
-      ["Target range pulses P2 max.", gv("Target range pulses P2 max.")]
+      ["Target range pulses P2 min.",gv("Target range pulses P2 min.")],
+      ["Target range pulses P2 max.",gv("Target range pulses P2 max.")]
     ];
-    h+=kvBlock("Control pulses P1", cp);
+
+    h+=kvBlock(
+      "Control pulses P1",
+      cp
+    );
+
   }
+
   else if(name==='SH1'){
+
     h="<div class='panel-h'>SH 1 — per hole (from Settings F8)</div>";
-    h+=tblBlock("SH per hole", ["ID","SH active","Number RH","Dist SH% to RH","Number SH","SH Power %","SH DC %","SH No. pulses"],
-      (DATA.settings||[]).map(function(s){return [s.id,s.shactive,s.numrh,s.distsh,s.numsh,s.shpower,s.shdc,s.shpulses];}));
+
+    h+=tblBlock(
+      "SH per hole",
+      ["ID","SH active","Number RH","Dist SH% to RH","Number SH","SH Power %","SH DC %","SH No. pulses"],
+      (DATA.settings||[]).map(function(s){
+
+        return[
+          s.id,
+          s.shactive,
+          s.numrh,
+          s.distsh,
+          s.numsh,
+          s.shpower,
+          s.shdc,
+          s.shpulses
+        ];
+
+      })
+    );
+
   }
+
   else if(name==='SH2'){
+
     h="<div class='panel-h'>SH 2 — SH control (from Settings F8)</div>";
-    h+=tblBlock("SH control", ["ID","Control power SH","Target integral","Delay SH (ms)","Delay RH (ms)"], DATA.settings2);
+
+    h+=tblBlock(
+      "SH control",
+      ["ID","Control power SH","Target integral","Delay SH (ms)","Delay RH (ms)"],
+      DATA.settings2
+    );
+
     var srsRows=[];
-    (DATA.general||[]).forEach(function(g){ if(g[0]==="Start at signal RS V"||g[0]==="Amplification RS %") srsRows.push(g); });
-    h+=kvBlock("Signal / Amplification (General)", srsRows);
+
+    (DATA.general||[]).forEach(function(g){
+
+      if(
+        g[0]==="Start at signal RS V"||
+        g[0]==="Amplification RS %"
+      ){
+
+        srsRows.push(g);
+
+      }
+
+    });
+
+    h+=kvBlock(
+      "Signal / Amplification (General)",
+      srsRows
+    );
+
   }
-  else if(name==='AC'){ h="<div class='panel-h'>Additional Cut</div>"+kvBlock("Additional Cut", DATA.ac); }
-  else if(name==='PBH'){ h="<div class='panel-h'>PBH</div>"+tblBlock("PBH", ["ID","active","Power%","DC%","Start","End","Ctrl","Target"], DATA.pbh); }
-  else if(name==='Bridges'){ h="<div class='panel-h'>Bridges</div>"+tblBlock("Bridges", ["ID","Holes on","Holes off"], DATA.bridges); }
-  else if(name==='Distance'){ h="<div class='panel-h'>Distance</div>"+tblBlock("Distance", ["ID","Calc.","Dist (mm)","V robot","Focus"], DATA.dist); }
+
+  else if(name==='AC'){
+
+    h=
+      "<div class='panel-h'>Additional Cut</div>"+
+      kvBlock(
+        "Additional Cut",
+        DATA.ac
+      );
+
+  }
+
+  else if(name==='PBH'){
+
+    h=
+      "<div class='panel-h'>PBH</div>"+
+      tblBlock(
+        "PBH",
+        ["ID","active","Power%","DC%","Start","End","Ctrl","Target"],
+        DATA.pbh
+      );
+
+  }
+
+  else if(name==='Bridges'){
+
+    h=
+      "<div class='panel-h'>Bridges</div>"+
+      tblBlock(
+        "Bridges",
+        ["ID","Holes on","Holes off"],
+        DATA.bridges
+      );
+
+  }
+
+  else if(name==='Distance'){
+
+    h=
+      "<div class='panel-h'>Distance</div>"+
+      tblBlock(
+        "Distance",
+        ["ID","Calc.","Dist (mm)","V robot","Focus"],
+        DATA.dist
+      );
+
+  }
+
   else if(name==='Settings'){
-    h="<div class='panel-h'>Settings (F8) — full table</div>";
-    h+=tblBlock("Settings", ["ID","Dist","WS%","P1%","DCP1","Pul1","Ctrl","P2%","DCP2","Pul2","Load","UseF","SHact","NumRH","DstSH","NumSH","SHP%","SHDC","SHpul"],
-      (DATA.settings||[]).map(function(s){return [s.id,s.dist,s.amp,s.p1,s.dcp1,s.pulses1,s.ctrl,s.p2,s.dcp2,s.pulses2,s.load,s.usefile,s.shactive,s.numrh,s.distsh,s.numsh,s.shpower,s.shdc,s.shpulses];}));
-    h+=tblBlock("SH Control", ["ID","Ctrl power SH","Target integral","Delay SH","Delay RH"], DATA.settings2);
+
+    h=
+      "<div class='panel-h'>Settings (F8) — full table</div>";
+
+    h+=tblBlock(
+      "Settings",
+      ["ID","Dist","WS%","P1%","DCP1","Pul1","Ctrl","P2%","DCP2","Pul2","Load","UseF","SHact","NumRH","DstSH","NumSH","SHP%","SHDC","SHpul"],
+      (DATA.settings||[]).map(function(s){
+
+        return[
+          s.id,
+          s.dist,
+          s.amp,
+          s.p1,
+          s.dcp1,
+          s.pulses1,
+          s.ctrl,
+          s.p2,
+          s.dcp2,
+          s.pulses2,
+          s.load,
+          s.usefile,
+          s.shactive,
+          s.numrh,
+          s.distsh,
+          s.numsh,
+          s.shpower,
+          s.shdc,
+          s.shpulses
+        ];
+
+      })
+    );
+
+    h+=tblBlock(
+      "SH Control",
+      ["ID","Ctrl power SH","Target integral","Delay SH","Delay RH"],
+      DATA.settings2
+    );
+
   }
+
   else if(name==='Barcode'){
+
     h=renderBarcode();
+
   }
+
   else if(name==='Sensor'){
-    var s1=(DATA.sensorNames&&DATA.sensorNames[0])||"L1", s2=(DATA.sensorNames&&DATA.sensorNames[1])||"AP-L1";
-    h="<div class='panel-h'>Sensor adjustment</div>";
-    h+=tblBlock("Sensor", ["Parameter",s1,s2], (DATA.sensor||[]).map(function(r){return [r[0],r[1],r[2]];}));
+
+    var s1=
+      (DATA.sensorNames&&DATA.sensorNames[0])||
+      "L1";
+
+    var s2=
+      (DATA.sensorNames&&DATA.sensorNames[1])||
+      "AP-L1";
+
+    h=
+      "<div class='panel-h'>Sensor adjustment</div>";
+
+    h+=tblBlock(
+      "Sensor",
+      ["Parameter",s1,s2],
+      (DATA.sensor||[]).map(function(r){
+        return[r[0],r[1],r[2]];
+      })
+    );
+
   }
-  else if(name==='Help'){ h="<div class='panel-h'>Help</div><div class='empty'>Machine help screen.</div>"; }
+
+  else if(name==='Help'){
+
+    h=
+      "<div class='panel-h'>Help</div>"+
+      "<div class='empty'>Machine help screen.</div>";
+
+  }
+
   else if(name==='Project'){
-    h="<div class='panel-h'>Project Information</div>"+kvBlock("Project", DATA.project)+tblBlock("ID Comments", ["ID","Comments on ID"], DATA.idcomments);
+
+    h=
+      "<div class='panel-h'>Project Information</div>"+
+      kvBlock(
+        "Project",
+        DATA.project
+      )+
+      tblBlock(
+        "ID Comments",
+        ["ID","Comments on ID"],
+        DATA.idcomments
+      );
+
   }
+
   else if(name==='Eval'){
-    h="<div class='panel-h'>Evaluation (F5)</div>"+kvBlock("Evaluation", DATA.eval_kv)+tblBlock("Per-ID", ["ID","Max","MinOK","MaxRow","Max","MinOK","MaxRow"], DATA.eval_rows);
+
+    h=
+      "<div class='panel-h'>Evaluation (F5)</div>"+
+      kvBlock(
+        "Evaluation",
+        DATA.eval_kv
+      )+
+      tblBlock(
+        "Per-ID",
+        ["ID","Max","MinOK","MaxRow","Max","MinOK","MaxRow"],
+        DATA.eval_rows
+      );
+
   }
-  p.innerHTML=h||"<div class='empty'>No data.</div>";
+
+  p.innerHTML=
+    h||
+    "<div class='empty'>No data.</div>";
+
 }
-function activateMain(name){ /* compat with parser calls */ }
+
+
+function activateMain(name){
+  /* compatibility */
+}
+
+
 function activateTab(name){
-  if(EDIT_MODE){ harvestEdits(); }
-  document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-tab')===name); });
-  renderTab(name);
-  if(EDIT_MODE){ applyEditMode(); }
-}
-function renderAll(){ renderHeader(); renderRefHoles(); activateTab('AC'); }
-function initTabs(){ document.querySelectorAll('.tab').forEach(function(tb){ tb.addEventListener('click',function(){ activateTab(tb.getAttribute('data-tab')); }); }); }
 
-
-function bcVal(arr,key){ if(!arr)return ""; for(var i=0;i<arr.length;i++){ if(arr[i][0]===key)return arr[i][1]; } return ""; }
-function isOn(v){ return v==="enabled"||v==="active"||v==="on"||v==="ON"; }
-function renderBarcode(){
-  var mode=DATA.bc_mode||[], printer=DATA.bc_printer||[], flags=DATA.bc_flags||[], konst=DATA.bc_const||[];
-  var modeOpts=["Without","Read","Print","Read and print"];
-  var h="<div class='panel-h'>Barcode</div><div class='bc-panel'>";
-  /* Mode + Printer type side by side */
-  h+="<div class='bc-two'>";
-  h+="<div class='bc-group'><span class='bc-legend'>Mode</span>";
-  modeOpts.forEach(function(m){ var on=isOn(bcVal(mode,m)); h+="<div class='bc-row'><span class='bc-radio"+(on?" on":"")+"'></span><span class='bc-lab'>"+m+"</span></div>"; });
-  var chk=bcVal(flags,"Check barcode length"), blen=bcVal(flags,"Barcode length");
-  h+="<div class='bc-row'><span class='bc-flag "+(isOn(chk)?"on":"off")+"'>"+(isOn(chk)?"ON":"OFF")+"</span><span class='bc-lab'>Check barcode length:</span><span class='bc-field'>"+esc(blen||"0")+"</span></div>";
-  h+="</div>";
-  h+="<div class='bc-group'><span class='bc-legend'>Printer type</span>";
-  printer.forEach(function(p){ var on=isOn(p[1]); h+="<div class='bc-row'><span class='bc-radio"+(on?" on":"")+"'></span><span class='bc-lab'>"+esc(p[0])+"</span></div>"; });
-  h+="</div></div>";
-  /* Barcode file */
-  var actual=bcVal(flags,"Actual file"); if(actual==="—")actual="";
-  h+="<div class='bc-group'><span class='bc-legend'>Barcode file</span>";
-  h+="<div class='bc-row'><span class='bc-flag off'>OFF</span><span class='bc-lab'>Standard</span><span style='flex:1;'></span><span class='bc-flag on'>ON</span><span class='bc-lab'>Barcode printing v2.0</span></div>";
-  h+="<div class='bc-file'>Actual file: "+(esc(actual)||"—")+"</div>";
-  h+="</div>";
-  /* Constant parameters */
-  h+="<div class='bc-group'><span class='bc-legend'>Constant parameters</span>";
-  konst.forEach(function(k){ h+="<div class='bc-row'><span class='bc-lab' style='min-width:130px;'>"+esc(k[0])+"</span><span class='bc-field'>"+(k[1]==="—"?"":esc(k[1]))+"</span></div>"; });
-  h+="<div class='bc-btns'><span class='bc-btn'>Print example</span><span class='bc-btn'>Print last barcode</span></div>";
-  h+="</div>";
-  h+="</div>";
-  return h;
-}
-/* F-key secondary screens (Settings, Evaluation, Project) shown in the right panel */
-function showSecondary(kind){
-  var p=document.getElementById('panel'); var h="";
-  if(kind==='settings'){
-    h="<div class='panel-h'>Settings (F8)</div>";
-    h+=tblBlock("Settings", ["ID","Dist","WS%","P1%","DCP1","Pul1","Ctrl","P2%","DCP2","Pul2","Load","UseF","SHact","NumRH","DstSH","NumSH","SHP%","SHDC","SHpul"],
-      (DATA.settings||[]).map(function(s){return [s.id,s.dist,s.amp,s.p1,s.dcp1,s.pulses1,s.ctrl,s.p2,s.dcp2,s.pulses2,s.load,s.usefile,s.shactive,s.numrh,s.distsh,s.numsh,s.shpower,s.shdc,s.shpulses];}));
-    h+=tblBlock("SH Control", ["ID","Ctrl power SH","Target integral","Delay SH","Delay RH"], DATA.settings2);
-  } else if(kind==='eval'){
-    h="<div class='panel-h'>Evaluation (F5)</div>"+kvBlock("Evaluation", DATA.eval_kv)+tblBlock("Per-ID", ["ID","Max","MinOK","MaxRow","Max","MinOK","MaxRow"], DATA.eval_rows);
-  } else if(kind==='project'){
-    h="<div class='panel-h'>Project Information</div>"+kvBlock("Project", DATA.project)+tblBlock("ID Comments", ["ID","Comments on ID"], DATA.idcomments);
+  if(EDIT_MODE){
+    harvestEdits();
   }
-  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
-  p.innerHTML=h;
+
+  document.querySelectorAll('.tab')
+    .forEach(function(x){
+
+      x.classList.toggle(
+        'active',
+        x.getAttribute('data-tab')===name
+      );
+
+    });
+
+  renderTab(name);
+
+  if(EDIT_MODE){
+    applyEditMode();
+  }
+
 }
 
-document.getElementById('uploadBtn').addEventListener('click',function(){ document.getElementById('pdfInput').click(); });
-document.getElementById('pdfInput').addEventListener('change',function(e){ if(e.target.files[0]) handlePDF(e.target.files[0]); });
 
-async function handlePDF(file){ var buf=await file.arrayBuffer(); await processBuffer(buf, file.name); }
+function renderAll(){
+
+  renderHeader();
+
+  renderRefHoles();
+
+  activateTab('AC');
+
+}
+
+
+function initTabs(){
+
+  document.querySelectorAll('.tab')
+    .forEach(function(tb){
+
+      tb.addEventListener(
+        'click',
+        function(){
+
+          activateTab(
+            tb.getAttribute('data-tab')
+          );
+
+        }
+      );
+
+    });
+
+}
+
+
+/* =========================================================
+   BARCODE
+   ========================================================= */
+
+function bcVal(arr,key){
+
+  if(!arr)
+    return "";
+
+  for(var i=0;i<arr.length;i++){
+
+    if(arr[i][0]===key)
+      return arr[i][1];
+
+  }
+
+  return "";
+
+}
+
+
+function isOn(v){
+
+  return(
+    v==="enabled"||
+    v==="active"||
+    v==="on"||
+    v==="ON"
+  );
+
+}
+
+
+function renderBarcode(){
+
+  var mode=DATA.bc_mode||[];
+  var printer=DATA.bc_printer||[];
+  var flags=DATA.bc_flags||[];
+  var konst=DATA.bc_const||[];
+
+  var modeOpts=[
+    "Without",
+    "Read",
+    "Print",
+    "Read and print"
+  ];
+
+  var h=
+    "<div class='panel-h'>Barcode</div>"+
+    "<div class='bc-panel'>";
+
+  h+="<div class='bc-two'>";
+
+  h+="<div class='bc-group'>"+
+     "<span class='bc-legend'>Mode</span>";
+
+  modeOpts.forEach(function(m){
+
+    var on=isOn(
+      bcVal(mode,m)
+    );
+
+    h+=
+      "<div class='bc-row'>"+
+      "<span class='bc-radio"+(on?" on":"")+
+      "'></span>"+
+      "<span class='bc-lab'>"+m+"</span>"+
+      "</div>";
+
+  });
+
+  var chk=bcVal(
+    flags,
+    "Check barcode length"
+  );
+
+  var blen=bcVal(
+    flags,
+    "Barcode length"
+  );
+
+  h+=
+    "<div class='bc-row'>"+
+    "<span class='bc-flag "+(isOn(chk)?"on":"off")+"'>"+
+    (isOn(chk)?"ON":"OFF")+
+    "</span>"+
+    "<span class='bc-lab'>Check barcode length:</span>"+
+    "<span class='bc-field'>"+
+    esc(blen||"0")+
+    "</span>"+
+    "</div>";
+
+  h+="</div>";
+
+  h+="<div class='bc-group'>"+
+     "<span class='bc-legend'>Printer type</span>";
+
+  printer.forEach(function(p){
+
+    var on=isOn(p[1]);
+
+    h+=
+      "<div class='bc-row'>"+
+      "<span class='bc-radio"+(on?" on":"")+
+      "'></span>"+
+      "<span class='bc-lab'>"+
+      esc(p[0])+
+      "</span>"+
+      "</div>";
+
+  });
+
+  h+="</div></div>";
+
+  var actual=bcVal(
+    flags,
+    "Actual file"
+  );
+
+  if(actual==="—")
+    actual="";
+
+  h+=
+    "<div class='bc-group'>"+
+    "<span class='bc-legend'>Barcode file</span>"+
+    "<div class='bc-row'>"+
+    "<span class='bc-flag off'>OFF</span>"+
+    "<span class='bc-lab'>Standard</span>"+
+    "<span style='flex:1;'></span>"+
+    "<span class='bc-flag on'>ON</span>"+
+    "<span class='bc-lab'>Barcode printing v2.0</span>"+
+    "</div>"+
+    "<div class='bc-file'>"+
+    "Actual file: "+
+    (esc(actual)||"—")+
+    "</div>"+
+    "</div>";
+
+  h+=
+    "<div class='bc-group'>"+
+    "<span class='bc-legend'>Constant parameters</span>";
+
+  konst.forEach(function(k){
+
+    h+=
+      "<div class='bc-row'>"+
+      "<span class='bc-lab' style='min-width:130px;'>"+
+      esc(k[0])+
+      "</span>"+
+      "<span class='bc-field'>"+
+      (k[1]==="—"?"":esc(k[1]))+
+      "</span>"+
+      "</div>";
+
+  });
+
+  h+=
+    "<div class='bc-btns'>"+
+    "<span class='bc-btn'>Print example</span>"+
+    "<span class='bc-btn'>Print last barcode</span>"+
+    "</div>";
+
+  h+="</div>";
+  h+="</div>";
+
+  return h;
+
+}
+
+
+/* =========================================================
+   SECONDARY SCREENS
+   ========================================================= */
+
+function showSecondary(kind){
+
+  var p=document.getElementById('panel');
+
+  var h="";
+
+  if(kind==='settings'){
+
+    h=
+      "<div class='panel-h'>Settings (F8)</div>";
+
+    h+=tblBlock(
+      "Settings",
+      ["ID","Dist","WS%","P1%","DCP1","Pul1","Ctrl","P2%","DCP2","Pul2","Load","UseF","SHact","NumRH","DstSH","NumSH","SHP%","SHDC","SHpul"],
+      (DATA.settings||[]).map(function(s){
+
+        return[
+          s.id,
+          s.dist,
+          s.amp,
+          s.p1,
+          s.dcp1,
+          s.pulses1,
+          s.ctrl,
+          s.p2,
+          s.dcp2,
+          s.pulses2,
+          s.load,
+          s.usefile,
+          s.shactive,
+          s.numrh,
+          s.distsh,
+          s.numsh,
+          s.shpower,
+          s.shdc,
+          s.shpulses
+        ];
+
+      })
+    );
+
+    h+=tblBlock(
+      "SH Control",
+      ["ID","Ctrl power SH","Target integral","Delay SH","Delay RH"],
+      DATA.settings2
+    );
+
+  }
+
+  else if(kind==='eval'){
+
+    h=
+      "<div class='panel-h'>Evaluation (F5)</div>"+
+      kvBlock(
+        "Evaluation",
+        DATA.eval_kv
+      )+
+      tblBlock(
+        "Per-ID",
+        ["ID","Max","MinOK","MaxRow","Max","MinOK","MaxRow"],
+        DATA.eval_rows
+      );
+
+  }
+
+  else if(kind==='project'){
+
+    h=
+      "<div class='panel-h'>Project Information</div>"+
+      kvBlock(
+        "Project",
+        DATA.project
+      )+
+      tblBlock(
+        "ID Comments",
+        ["ID","Comments on ID"],
+        DATA.idcomments
+      );
+
+  }
+
+  document.querySelectorAll('.tab')
+    .forEach(function(x){
+      x.classList.remove('active');
+    });
+
+  p.innerHTML=h;
+
+}
+
+
+/* =========================================================
+   NEW UPLOAD SYSTEM
+   PDF / ZIP / FOLDER
+   ========================================================= */
+
+function showUploadMenu(){
+
+  var oldMenu=
+    document.getElementById(
+      'uploadMenu'
+    );
+
+  if(oldMenu){
+    oldMenu.remove();
+  }
+
+  var menu=
+    document.createElement('div');
+
+  menu.id='uploadMenu';
+  menu.className='upload-menu';
+
+  menu.innerHTML=
+
+    '<div class="upload-menu-title">'+
+      'Upload Machine Data'+
+    '</div>'+
+
+    '<div class="upload-menu-subtitle">'+
+      'Choose a PDF file, ZIP file, or machine folder.'+
+    '</div>'+
+
+    '<button id="choosePDF" class="upload-choice pdf">'+
+      'PDF File'+
+    '</button>'+
+
+    '<button id="chooseZIP" class="upload-choice zip">'+
+      'ZIP File'+
+    '</button>'+
+
+    '<button id="chooseFolder" class="upload-choice folder">'+
+      'Machine Folder'+
+    '</button>'+
+
+    '<button id="closeUploadMenu" class="upload-choice cancel">'+
+      'Cancel'+
+    '</button>';
+
+  document.body.appendChild(menu);
+
+
+  document.getElementById(
+    'choosePDF'
+  ).onclick=function(){
+
+    menu.remove();
+
+    var input=
+      document.getElementById(
+        'pdfInput'
+      );
+
+    input.value='';
+
+    input.accept=
+      '.pdf,application/pdf';
+
+    input.click();
+
+  };
+
+
+  document.getElementById(
+    'chooseZIP'
+  ).onclick=function(){
+
+    menu.remove();
+
+    var input=
+      document.getElementById(
+        'pdfInput'
+      );
+
+    input.value='';
+
+    input.accept=
+      '.zip,application/zip';
+
+    input.click();
+
+  };
+
+
+  document.getElementById(
+    'chooseFolder'
+  ).onclick=function(){
+
+    menu.remove();
+
+    var input=
+      document.getElementById(
+        'folderInput'
+      );
+
+    input.value='';
+
+    input.click();
+
+  };
+
+
+  document.getElementById(
+    'closeUploadMenu'
+  ).onclick=function(){
+
+    menu.remove();
+
+  };
+
+}
+
+
+/* =========================================================
+   PDF INPUT
+   ========================================================= */
+
+document.getElementById(
+  'pdfInput'
+).addEventListener(
+  'change',
+  async function(e){
+
+    var file=e.target.files[0];
+
+    if(!file){
+      return;
+    }
+
+
+    /* PDF */
+
+    if(
+      file.name
+        .toLowerCase()
+        .endsWith('.pdf')
+    ){
+
+      setStatus(
+        "Loading PDF "+
+        file.name+
+        " …"
+      );
+
+      try{
+
+        await handlePDF(file);
+
+      }
+      catch(err){
+
+        console.error(err);
+
+        setStatus(
+          "Could not load PDF: "+
+          err.message
+        );
+
+      }
+
+      return;
+
+    }
+
+
+    /* ZIP */
+
+    if(
+      file.name
+        .toLowerCase()
+        .endsWith('.zip')
+    ){
+
+      await handleZIP(file);
+
+      return;
+
+    }
+
+
+    setStatus(
+      "Please select a PDF or ZIP file."
+    );
+
+  }
+);
+
+
+/* =========================================================
+   FOLDER INPUT
+   ========================================================= */
+
+document.getElementById(
+  'folderInput'
+).addEventListener(
+  'change',
+  async function(e){
+
+    var files=
+      Array.from(
+        e.target.files||[]
+      );
+
+    if(!files.length){
+      return;
+    }
+
+    await handleFolder(files);
+
+  }
+);
+
+
+/* =========================================================
+   EXISTING PDF HANDLER
+   ========================================================= */
+
+async function handlePDF(file){
+
+  var buf=
+    await file.arrayBuffer();
+
+  await processBuffer(
+    buf,
+    file.name
+  );
+
+}
+
+
+/* =========================================================
+   ZIP HANDLER
+   ========================================================= */
+
+async function handleZIP(file){
+
+  setStatus(
+    "Reading ZIP file "+
+    file.name+
+    " …"
+  );
+
+  try{
+
+    if(typeof JSZip==="undefined"){
+
+      setStatus(
+        "ZIP support is not available."
+      );
+
+      return;
+
+    }
+
+    var zip=
+      await JSZip.loadAsync(file);
+
+    var pdfFiles=[];
+
+
+    zip.forEach(
+      function(relativePath,zipEntry){
+
+        if(
+          !zipEntry.dir &&
+          relativePath
+            .toLowerCase()
+            .endsWith('.pdf')
+        ){
+
+          pdfFiles.push({
+            name:relativePath,
+            entry:zipEntry
+          });
+
+        }
+
+      }
+    );
+
+
+    if(pdfFiles.length===0){
+
+      setStatus(
+        "No PDF files were found inside "+
+        file.name+
+        "."
+      );
+
+      return;
+
+    }
+
+
+    pdfFiles.sort(
+      function(a,b){
+
+        return a.name.localeCompare(
+          b.name
+        );
+
+      }
+    );
+
+
+    showPDFChooser(
+      pdfFiles,
+      "ZIP: "+file.name,
+      true
+    );
+
+  }
+  catch(err){
+
+    console.error(
+      "ZIP error:",
+      err
+    );
+
+    setStatus(
+      "Could not read ZIP file: "+
+      err.message
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   FOLDER HANDLER
+   ========================================================= */
+
+async function handleFolder(files){
+
+  setStatus(
+    "Scanning machine folder for PDF files …"
+  );
+
+  try{
+
+    var pdfFiles=[];
+
+
+    files.forEach(function(file){
+
+      if(
+        file.name &&
+        file.name
+          .toLowerCase()
+          .endsWith('.pdf')
+      ){
+
+        pdfFiles.push({
+          name:
+            file.webkitRelativePath||
+            file.name,
+
+          file:file
+        });
+
+      }
+
+    });
+
+
+    if(pdfFiles.length===0){
+
+      setStatus(
+        "No PDF files were found in the selected machine folder."
+      );
+
+      return;
+
+    }
+
+
+    pdfFiles.sort(
+      function(a,b){
+
+        return a.name.localeCompare(
+          b.name
+        );
+
+      }
+    );
+
+
+    showPDFChooser(
+      pdfFiles,
+      "Machine Folder",
+      false
+    );
+
+  }
+  catch(err){
+
+    console.error(
+      "Folder error:",
+      err
+    );
+
+    setStatus(
+      "Could not scan machine folder: "+
+      err.message
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   PDF CHOOSER
+   ========================================================= */
+
+function showPDFChooser(
+  pdfFiles,
+  sourceName,
+  isZip
+){
+
+  var oldChooser=
+    document.getElementById(
+      'pdfChooser'
+    );
+
+  if(oldChooser){
+    oldChooser.remove();
+  }
+
+
+  var chooser=
+    document.createElement('div');
+
+  chooser.id='pdfChooser';
+  chooser.className='pdf-chooser';
+
+
+  var options='';
+
+
+  pdfFiles.forEach(
+    function(item,index){
+
+      options+=
+        '<option value="'+index+'">'+
+        escapeHTML(item.name)+
+        '</option>';
+
+    }
+  );
+
+
+  chooser.innerHTML=
+
+    '<div class="pdf-chooser-title">'+
+      'PDF Files Found'+
+    '</div>'+
+
+    '<div class="pdf-chooser-source">'+
+      escapeHTML(sourceName)+
+      ' — '+
+      pdfFiles.length+
+      ' PDF file(s) found'+
+    '</div>'+
+
+    '<select id="pdfSelect" class="pdf-select">'+
+      options+
+    '</select>'+
+
+    '<button id="loadSelectedPDF" class="pdf-load-btn">'+
+      'Load Selected PDF'+
+    '</button>'+
+
+    '<button id="cancelPDFSelection" class="pdf-cancel-btn">'+
+      'Cancel'+
+    '</button>';
+
+
+  document.body.appendChild(
+    chooser
+  );
+
+
+  document.getElementById(
+    'loadSelectedPDF'
+  ).onclick=async function(){
+
+    var select=
+      document.getElementById(
+        'pdfSelect'
+      );
+
+    var index=
+      parseInt(
+        select.value,
+        10
+      );
+
+    var selected=
+      pdfFiles[index];
+
+
+    if(!selected){
+
+      setStatus(
+        "Please select a PDF."
+      );
+
+      return;
+
+    }
+
+
+    chooser.remove();
+
+
+    try{
+
+      setStatus(
+        "Loading "+
+        selected.name+
+        " …"
+      );
+
+      var buf;
+
+
+      if(isZip){
+
+        buf=
+          await selected.entry
+            .async("arraybuffer");
+
+      }
+      else{
+
+        buf=
+          await selected.file
+            .arrayBuffer();
+
+      }
+
+
+      await processBuffer(
+        buf,
+        selected.name
+      );
+
+    }
+    catch(err){
+
+      console.error(
+        "PDF load error:",
+        err
+      );
+
+      setStatus(
+        "Could not load PDF: "+
+        err.message
+      );
+
+    }
+
+  };
+
+
+  document.getElementById(
+    'cancelPDFSelection'
+  ).onclick=function(){
+
+    chooser.remove();
+
+    setStatus(
+      "PDF selection cancelled."
+    );
+
+  };
+
+}
+
+
+/* =========================================================
+   HTML ESCAPE FOR FILENAMES
+   ========================================================= */
+
+function escapeHTML(value){
+
+  return String(value)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+/* =========================================================
+   TABS
+   ========================================================= */
 
 initTabs();
 
-var fs1=document.getElementById('fkey_settings'); if(fs1)fs1.addEventListener('click',function(){showSecondary('settings');});
-var fe1=document.getElementById('fkey_eval'); if(fe1)fe1.addEventListener('click',function(){showSecondary('eval');});
-var fp1=document.getElementById('fkey_project'); if(fp1)fp1.addEventListener('click',function(){showSecondary('project');});
 
-var MACHINE_ID = "";
+var fs1=
+  document.getElementById(
+    'fkey_settings'
+  );
 
-/* ---------- STAGE 3: gather all parsed values into one JSON snapshot ---------- */
+if(fs1){
+
+  fs1.addEventListener(
+    'click',
+    function(){
+      showSecondary('settings');
+    }
+  );
+
+}
+
+
+var fe1=
+  document.getElementById(
+    'fkey_eval'
+  );
+
+if(fe1){
+
+  fe1.addEventListener(
+    'click',
+    function(){
+      showSecondary('eval');
+    }
+  );
+
+}
+
+
+var fp1=
+  document.getElementById(
+    'fkey_project'
+  );
+
+if(fp1){
+
+  fp1.addEventListener(
+    'click',
+    function(){
+      showSecondary('project');
+    }
+  );
+
+}
+
+
+/* =========================================================
+   MACHINE ID
+   ========================================================= */
+
+var MACHINE_ID="";
+
+
+/* =========================================================
+   BUILD CONFIG JSON
+   ========================================================= */
+
 function buildConfigJSON(){
-  var cfg = {
-    title: (DATA.header&&DATA.header.title)||"",
-    number: (DATA.header&&DATA.header.number)||"",
-    machine: (DATA.header&&DATA.header.machine)||"",
-    switch_off_p1: (DATA.header&&DATA.header.switch_off_p1)||"",
-    switch_off_p2: (DATA.header&&DATA.header.switch_off_p2)||"",
-    attenuators: (DATA.header&&DATA.header.attenuators)||"",
-    sensorNames: DATA.sensorNames||[],
-    general: DATA.general||[],
-    sensor: DATA.sensor||[],
-    additional_cut: DATA.ac||[],
-    reference_holes: DATA.settings||[],
-    settings_sh_control: DATA.settings2||[],
-    pbh: DATA.pbh||[],
-    bridges: DATA.bridges||[],
-    distance: DATA.dist||[],
-    barcode_mode: DATA.bc_mode||[],
-    barcode_printer: DATA.bc_printer||[],
-    barcode_flags: DATA.bc_flags||[],
-    project: DATA.project||[],
-    id_comments: DATA.idcomments||[],
-    evaluation: DATA.eval_kv||[],
-    evaluation_rows: DATA.eval_rows||[]
+
+  var cfg={
+
+    title:
+      (DATA.header&&DATA.header.title)||"",
+
+    number:
+      (DATA.header&&DATA.header.number)||"",
+
+    machine:
+      (DATA.header&&DATA.header.machine)||"",
+
+    switch_off_p1:
+      (DATA.header&&DATA.header.switch_off_p1)||"",
+
+    switch_off_p2:
+      (DATA.header&&DATA.header.switch_off_p2)||"",
+
+    attenuators:
+      (DATA.header&&DATA.header.attenuators)||"",
+
+    sensorNames:
+      DATA.sensorNames||[],
+
+    general:
+      DATA.general||[],
+
+    sensor:
+      DATA.sensor||[],
+
+    additional_cut:
+      DATA.ac||[],
+
+    reference_holes:
+      DATA.settings||[],
+
+    settings_sh_control:
+      DATA.settings2||[],
+
+    pbh:
+      DATA.pbh||[],
+
+    bridges:
+      DATA.bridges||[],
+
+    distance:
+      DATA.dist||[],
+
+    barcode_mode:
+      DATA.bc_mode||[],
+
+    barcode_printer:
+      DATA.bc_printer||[],
+
+    barcode_flags:
+      DATA.bc_flags||[],
+
+    project:
+      DATA.project||[],
+
+    id_comments:
+      DATA.idcomments||[],
+
+    evaluation:
+      DATA.eval_kv||[],
+
+    evaluation_rows:
+      DATA.eval_rows||[]
+
   };
+
   return JSON.stringify(cfg);
+
 }
 
-/* ---------- EDIT MODE: make all shown values editable ---------- */
+
+/* =========================================================
+   EDIT MODE
+   ========================================================= */
+
 var EDIT_MODE=false;
+
 function applyEditMode(){
-  var panel=document.getElementById('panel');
-  var scope=document.querySelector('.machine');
-  if(!scope) return;
-  /* make value cells / boxes editable */
-  var sel=scope.querySelectorAll(".kv .v, table.rh td .box, .subt td, .bc-field, .rec-val, .mini");
+
+  var panel=
+    document.getElementById('panel');
+
+  var scope=
+    document.querySelector('.machine');
+
+  if(!scope)
+    return;
+
+
+  var sel=
+    scope.querySelectorAll(
+      ".kv .v, table.rh td .box, .subt td, .bc-field, .rec-val, .mini"
+    );
+
+
   sel.forEach(function(el){
+
     if(EDIT_MODE){
-      el.setAttribute('contenteditable','true');
-      el.style.outline='1px dashed #b26a00';
-      el.style.background='#fff7ec';
-    } else {
-      el.removeAttribute('contenteditable');
+
+      el.setAttribute(
+        'contenteditable',
+        'true'
+      );
+
+      el.style.outline=
+        '1px dashed #b26a00';
+
+      el.style.background=
+        '#fff7ec';
+
+    }
+    else{
+
+      el.removeAttribute(
+        'contenteditable'
+      );
+
       el.style.outline='';
+
     }
+
   });
+
 }
-/* Rebuild DATA from the edited on-screen values before saving */
+
+
+/* =========================================================
+   HARVEST EDITS
+   ========================================================= */
+
 function harvestEdits(){
-  var scope=document.querySelector('.machine');
-  if(!scope) return;
+
+  var scope=
+    document.querySelector('.machine');
+
+  if(!scope)
+    return;
+
+
   /* header */
-  var t=document.getElementById('dr_title'); if(t) DATA.header.title=t.textContent.trim();
-  var n=document.getElementById('dr_number'); if(n) DATA.header.number=n.textContent.trim();
-  var p1=document.getElementById('so_p1'); if(p1) DATA.header.switch_off_p1=p1.textContent.trim();
-  var p2=document.getElementById('so_p2'); if(p2) DATA.header.switch_off_p2=p2.textContent.trim();
-  var at1=document.getElementById('attn'); if(at1) DATA.header.attenuators=at1.textContent.trim();
-  /* reference holes table (left) -> DATA.settings basic cols */
-  var rows=document.querySelectorAll('#rh_body tr');
+
+  var t=
+    document.getElementById(
+      'dr_title'
+    );
+
+  if(t)
+    DATA.header.title=
+      t.textContent.trim();
+
+
+  var n=
+    document.getElementById(
+      'dr_number'
+    );
+
+  if(n)
+    DATA.header.number=
+      n.textContent.trim();
+
+
+  var p1=
+    document.getElementById(
+      'so_p1'
+    );
+
+  if(p1)
+    DATA.header.switch_off_p1=
+      p1.textContent.trim();
+
+
+  var p2=
+    document.getElementById(
+      'so_p2'
+    );
+
+  if(p2)
+    DATA.header.switch_off_p2=
+      p2.textContent.trim();
+
+
+  var at1=
+    document.getElementById(
+      'attn'
+    );
+
+  if(at1)
+    DATA.header.attenuators=
+      at1.textContent.trim();
+
+
+  /* reference holes */
+
+  var rows=
+    document.querySelectorAll(
+      '#rh_body tr'
+    );
+
+
   rows.forEach(function(tr,idx){
+
     if(DATA.settings[idx]){
-      var boxes=tr.querySelectorAll('td .box');
-      /* order: dist, amp, p1, pulses1, (ctrl pill), p2, pulses2, (load pill) */
-      if(boxes[0])DATA.settings[idx].dist=boxes[0].textContent.trim();
-      if(boxes[1])DATA.settings[idx].amp=boxes[1].textContent.trim();
-      if(boxes[2])DATA.settings[idx].p1=boxes[2].textContent.trim();
-      if(boxes[3])DATA.settings[idx].pulses1=boxes[3].textContent.trim();
-      if(boxes[4])DATA.settings[idx].p2=boxes[4].textContent.trim();
-      if(boxes[5])DATA.settings[idx].pulses2=boxes[5].textContent.trim();
+
+      var boxes=
+        tr.querySelectorAll(
+          'td .box'
+        );
+
+
+      if(boxes[0])
+        DATA.settings[idx].dist=
+          boxes[0].textContent.trim();
+
+
+      if(boxes[1])
+        DATA.settings[idx].amp=
+          boxes[1].textContent.trim();
+
+
+      if(boxes[2])
+        DATA.settings[idx].p1=
+          boxes[2].textContent.trim();
+
+
+      if(boxes[3])
+        DATA.settings[idx].pulses1=
+          boxes[3].textContent.trim();
+
+
+      if(boxes[4])
+        DATA.settings[idx].p2=
+          boxes[4].textContent.trim();
+
+
+      if(boxes[5])
+        DATA.settings[idx].pulses2=
+          boxes[5].textContent.trim();
+
     }
+
   });
-  /* current tab's kv/table edits: re-read the visible panel into the matching DATA arrays */
-  /* General kv */
-  var activeTab=document.querySelector('.tab.active');
-  var tabName=activeTab?activeTab.getAttribute('data-tab'):'';
-  var kvEls=document.querySelectorAll('#panel .kv');
-  /* We map kv edits generically: match by label text into the relevant arrays */
+
+
+  /* current tab */
+
+  var activeTab=
+    document.querySelector(
+      '.tab.active'
+    );
+
+  var tabName=
+    activeTab?
+    activeTab.getAttribute('data-tab'):
+    '';
+
+
+  var kvEls=
+    document.querySelectorAll(
+      '#panel .kv'
+    );
+
+
   function updateArrayByLabel(arr){
-    if(!arr) return;
+
+    if(!arr)
+      return;
+
     kvEls.forEach(function(kv){
-      var k=kv.querySelector('.k'), v=kv.querySelector('.v');
-      if(k&&v){ var lbl=k.textContent.trim(), val=v.textContent.trim();
-        for(var i=0;i<arr.length;i++){ if(arr[i][0]===lbl){ arr[i][1]=val; } }
-      }
-    });
-  }
-  updateArrayByLabel(DATA.general);
-  updateArrayByLabel(DATA.ac);
-  /* table edits (settings2, pbh, dist, bridges, eval_rows, sensor) from #panel .subt */
-  var subt=document.querySelector('#panel .subt');
-  if(subt){
-    var trs=subt.querySelectorAll('tr');
-    /* skip header row (index 0) */
-    var arrMap={ 'PBH':DATA.pbh, 'Bridges':DATA.bridges, 'Distance':DATA.dist };
-    var target=arrMap[tabName];
-    if(target){
-      for(var r=1;r<trs.length && (r-1)<target.length;r++){
-        var tds=trs[r].querySelectorAll('td');
-        for(var col=0;col<tds.length && col<target[r-1].length;col++){
-          target[r-1][col]=tds[col].textContent.trim();
+
+      var k=
+        kv.querySelector('.k');
+
+      var v=
+        kv.querySelector('.v');
+
+      if(k&&v){
+
+        var lbl=
+          k.textContent.trim();
+
+        var val=
+          v.textContent.trim();
+
+
+        for(
+          var i=0;
+          i<arr.length;
+          i++
+        ){
+
+          if(arr[i][0]===lbl){
+
+            arr[i][1]=val;
+
+          }
+
         }
+
       }
-    }
+
+    });
+
   }
-}
 
-/* ---------- SAVE PDF then EXIT ---------- */
-var LOG_SAVE_WEBHOOK = "https://flow.zoho.com/896521609/flow/webhook/incoming?zapikey=1001.b6c8f1bb9592ee6236945c292490a20e.038b987f75e08c203f999d77a4a6d5a8&isdebug=false";
-var DETAIL_URL = "https://creatorapp.zoho.com/sarathynds_saryam/jenoptik-logs/#Page:Reports_Detail_View?record_id=";
-async function onExitClick(){
-  if(!PDF_LOADED){ setStatus("Load a PDF first."); return; }
-  if(!LOG_ID){ setStatus("No Log ID. Open this viewer from a Log record (?logId=...)."); return; }
-  if(EDIT_MODE){ harvestEdits(); }
-  var json = buildConfigJSON();
-  var btn=document.getElementById('exitBtn'); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
-  setStatus("Saving to Log " + LOG_ID + " …");
-  var form = new URLSearchParams();
-  form.append("logId", LOG_ID);
-  form.append("config", btoa(unescape(encodeURIComponent(json))));
-  try{
-    await fetch(LOG_SAVE_WEBHOOK, { method:"POST", mode:"no-cors", body: form });
-  }catch(e){ }
-  setStatus("Saved to Log " + LOG_ID + ". Returning to the report…");
-  document.getElementById('hint').textContent = "Configuration saved to Log record " + LOG_ID + ".";
-  setTimeout(function(){
-    var back = DETAIL_URL + LOG_ID;
-    try{
-      if(window.top && window.top!==window.self){ window.top.location.href = back; }
-      else { window.location.href = back; }
-    }catch(e){
-      window.location.href = back;
+
+  updateArrayByLabel(
+    DATA.general
+  );
+
+  updateArrayByLabel(
+    DATA.ac
+  );
+
+
+  /* table edits */
+
+  var subt=
+    document.querySelector(
+      '#panel .subt'
+    );
+
+
+  if(subt){
+
+    var trs=
+      subt.querySelectorAll(
+        'tr'
+      );
+
+
+    var arrMap={
+      'PBH':DATA.pbh,
+      'Bridges':DATA.bridges,
+      'Distance':DATA.dist
+    };
+
+
+    var target=
+      arrMap[tabName];
+
+
+    if(target){
+
+      for(
+        var r=1;
+        r<trs.length &&
+        (r-1)<target.length;
+        r++
+      ){
+
+        var tds=
+          trs[r].querySelectorAll(
+            'td'
+          );
+
+
+        for(
+          var col=0;
+          col<tds.length &&
+          col<target[r-1].length;
+          col++
+        ){
+
+          target[r-1][col]=
+            tds[col]
+              .textContent
+              .trim();
+
+        }
+
+      }
+
     }
-  }, 1400);
-}
-var _xb=document.getElementById('exitBtn'); if(_xb) _xb.addEventListener('click', onExitClick);
-var _eb=document.getElementById('editBtn');
-if(_eb) _eb.addEventListener('click', function(){
-  if(!PDF_LOADED){ setStatus("Load a PDF first."); return; }
-  EDIT_MODE=!EDIT_MODE;
-  _eb.textContent = EDIT_MODE ? "Editing… (click to lock)" : "Edit Values";
-  _eb.style.background = EDIT_MODE ? "#8a4f00" : "#b26a00";
-  applyEditMode();
-  setStatus(EDIT_MODE ? "Edit mode ON — click any value to change it. Switch tabs to edit those too." : "Edit mode off.");
-});
 
-var LOG_ID = "";
+  }
+
+}
+
+
+/* =========================================================
+   SAVE PDF THEN EXIT
+   ========================================================= */
+
+var LOG_SAVE_WEBHOOK=
+  "https://flow.zoho.com/896521609/flow/webhook/incoming?zapikey=1001.b6c8f1bb9592ee6236945c292490a20e.038b987f75e08c203f999d77a4a6d5a8&isdebug=false";
+
+var DETAIL_URL=
+  "https://creatorapp.zoho.com/sarathynds_saryam/jenoptik-logs/#Page:Reports_Detail_View?record_id=";
+
+
+async function onExitClick(){
+
+  if(!PDF_LOADED){
+
+    setStatus(
+      "Load a PDF first."
+    );
+
+    return;
+
+  }
+
+
+  if(!LOG_ID){
+
+    setStatus(
+      "No Log ID. Open this viewer from a Log record (?logId=...)."
+    );
+
+    return;
+
+  }
+
+
+  if(EDIT_MODE){
+
+    harvestEdits();
+
+  }
+
+
+  var json=
+    buildConfigJSON();
+
+
+  var btn=
+    document.getElementById(
+      'exitBtn'
+    );
+
+
+  if(btn){
+
+    btn.disabled=true;
+    btn.textContent="Saving…";
+
+  }
+
+
+  setStatus(
+    "Saving to Log "+
+    LOG_ID+
+    " …"
+  );
+
+
+  var form=
+    new URLSearchParams();
+
+
+  form.append(
+    "logId",
+    LOG_ID
+  );
+
+
+  form.append(
+    "config",
+    btoa(
+      unescape(
+        encodeURIComponent(json)
+      )
+    )
+  );
+
+
+  try{
+
+    await fetch(
+      LOG_SAVE_WEBHOOK,
+      {
+        method:"POST",
+        mode:"no-cors",
+        body:form
+      }
+    );
+
+  }
+  catch(e){}
+
+
+  setStatus(
+    "Saved to Log "+
+    LOG_ID+
+    ". Returning to the report…"
+  );
+
+
+  document.getElementById(
+    'hint'
+  ).textContent=
+    "Configuration saved to Log record "+
+    LOG_ID+
+    ".";
+
+
+  setTimeout(
+    function(){
+
+      var back=
+        DETAIL_URL+
+        LOG_ID;
+
+
+      try{
+
+        if(
+          window.top&&
+          window.top!==window.self
+        ){
+
+          window.top.location.href=
+            back;
+
+        }
+        else{
+
+          window.location.href=
+            back;
+
+        }
+
+      }
+      catch(e){
+
+        window.location.href=
+          back;
+
+      }
+
+    },
+    1400
+  );
+
+}
+
+
+var _xb=
+  document.getElementById(
+    'exitBtn'
+  );
+
+if(_xb){
+
+  _xb.addEventListener(
+    'click',
+    onExitClick
+  );
+
+}
+
+
+var _eb=
+  document.getElementById(
+    'editBtn'
+  );
+
+
+if(_eb){
+
+  _eb.addEventListener(
+    'click',
+    function(){
+
+      if(!PDF_LOADED){
+
+        setStatus(
+          "Load a PDF first."
+        );
+
+        return;
+
+      }
+
+
+      EDIT_MODE=!EDIT_MODE;
+
+
+      _eb.textContent=
+        EDIT_MODE?
+        "Editing… (click to lock)":
+        "Edit Values";
+
+
+      _eb.style.background=
+        EDIT_MODE?
+        "#8a4f00":
+        "#b26a00";
+
+
+      applyEditMode();
+
+
+      setStatus(
+        EDIT_MODE?
+        "Edit mode ON — click any value to change it. Switch tabs to edit those too.":
+        "Edit mode off."
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   URL PARAMETERS
+   ========================================================= */
+
+var LOG_ID="";
+
+
 (function(){
-  var params=new URLSearchParams(location.search);
-  var recId=params.get('recId');
-  MACHINE_ID = params.get('machineId') || "";
-  LOG_ID = params.get('logId') || "";
-  if(LOG_ID){ setStatus("Log record: " + LOG_ID + " — upload a PDF, then Save Configuration."); }
-  else if(MACHINE_ID){ setStatus("Machine record: " + MACHINE_ID + " — upload a PDF, then Save."); }
-  if(recId){ autoLoadRecord(recId); }
+
+  var params=
+    new URLSearchParams(
+      location.search
+    );
+
+
+  var recId=
+    params.get('recId');
+
+
+  MACHINE_ID=
+    params.get('machineId')||
+    "";
+
+
+  LOG_ID=
+    params.get('logId')||
+    "";
+
+
+  if(LOG_ID){
+
+    setStatus(
+      "Log record: "+
+      LOG_ID+
+      " — upload a PDF, then Save Configuration."
+    );
+
+  }
+  else if(MACHINE_ID){
+
+    setStatus(
+      "Machine record: "+
+      MACHINE_ID+
+      " — upload a PDF, then Save."
+    );
+
+  }
+
+
+  if(recId){
+
+    autoLoadRecord(
+      recId
+    );
+
+  }
+
 })();
+
+
+/* =========================================================
+   UPLOAD BUTTON
+   ========================================================= */
+
+document.getElementById(
+  'uploadBtn'
+).addEventListener(
+  'click',
+  function(){
+
+    showUploadMenu();
+
+  }
+);
+
 </script>
+
 </body>
 </html>
