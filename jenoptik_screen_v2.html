@@ -77,12 +77,18 @@
 </head>
 <body>
 <div class="toolbar">
-  <button class="up-btn" id="uploadBtn">&#128228; Upload Machine</button>
+  <div style="position:relative;display:inline-block;">
+    <button class="up-btn" id="uploadBtn">&#128228; Upload Machine &#9662;</button>
+    <div id="uploadMenu" style="display:none;position:absolute;left:0;top:calc(100% + 4px);background:#fff;border:1px solid #cdd7e5;border-radius:8px;box-shadow:0 8px 20px rgba(15,23,42,.15);z-index:100;min-width:180px;overflow:hidden;">
+      <a id="pickFile" style="display:block;padding:10px 14px;font-size:13px;color:#243043;text-decoration:none;cursor:pointer;border-bottom:1px solid #eef2f7;">&#128196; PDF or ZIP file</a>
+      <a id="pickFolder" style="display:block;padding:10px 14px;font-size:13px;color:#243043;text-decoration:none;cursor:pointer;">&#128193; Machine folder</a>
+    </div>
+  </div>
   <button class="up-btn" id="editBtn" style="background:#b26a00;display:none;">Edit Values</button>
   <button class="up-btn" id="exitBtn" style="background:#16803c;display:none;">Save &amp; Exit</button>
   <input type="file" id="fileInput" accept="application/pdf,.zip,application/zip" style="display:none;">
   <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
-  <span class="up-status" id="upStatus">Click Upload Machine (PDF or ZIP), or drag a machine folder onto the button.</span>
+  <span class="up-status" id="upStatus">Click Upload Machine, then choose a PDF/ZIP file or a folder.</span>
 </div>
 <div id="pdfPicker" style="max-width:1240px;margin:0 auto 10px;display:none;background:#fff;border:1px solid #dbe2ee;border-radius:8px;padding:12px 15px;">
   <div style="font-size:13px;font-weight:700;color:#0b2d73;margin-bottom:8px;" id="pdfPickerTitle">Select Machine PDF</div>
@@ -608,9 +614,14 @@ async function routeFile(file){
 }
 
 /* Upload Machine button -> file picker (PDF or ZIP) */
-document.getElementById('uploadBtn').addEventListener('click',function(){ document.getElementById('fileInput').click(); });
+var upMenu=document.getElementById('uploadMenu');
+function toggleMenu(show){ upMenu.style.display = (show===undefined ? (upMenu.style.display==='none'?'block':'none') : (show?'block':'none')); }
+document.getElementById('uploadBtn').addEventListener('click',function(e){ e.stopPropagation(); toggleMenu(); });
+document.addEventListener('click',function(){ toggleMenu(false); });
+upMenu.addEventListener('click',function(e){ e.stopPropagation(); });
+document.getElementById('pickFile').addEventListener('click',function(){ toggleMenu(false); document.getElementById('fileInput').click(); });
+document.getElementById('pickFolder').addEventListener('click',function(){ toggleMenu(false); document.getElementById('folderInput').click(); });
 document.getElementById('fileInput').addEventListener('change',async function(e){ if(e.target.files[0]) await routeFile(e.target.files[0]); });
-/* hidden folder input (in case we trigger it) */
 document.getElementById('folderInput').addEventListener('change',async function(e){ await loadFileList(e.target.files); });
 
 /* Drag & drop onto the Upload Machine button: supports files AND folders */
