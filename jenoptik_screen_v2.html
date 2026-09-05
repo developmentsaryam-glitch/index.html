@@ -77,15 +77,12 @@
 </head>
 <body>
 <div class="toolbar">
-  <button class="up-btn" id="pdfBtn">&#128196; PDF File</button>
-  <button class="up-btn" id="zipBtn" style="background:#6741d9;">&#128230; ZIP File</button>
-  <button class="up-btn" id="folderBtn" style="background:#0d7a86;">&#128193; Machine Folder</button>
+  <button class="up-btn" id="uploadBtn">&#128228; Upload Machine</button>
   <button class="up-btn" id="editBtn" style="background:#b26a00;display:none;">Edit Values</button>
   <button class="up-btn" id="exitBtn" style="background:#16803c;display:none;">Save &amp; Exit</button>
-  <input type="file" id="pdfInput" accept="application/pdf">
-  <input type="file" id="zipInput" accept=".zip,application/zip" style="display:none;">
+  <input type="file" id="fileInput" accept="application/pdf,.zip,application/zip" style="display:none;">
   <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
-  <span class="up-status" id="upStatus">Upload a machine data-record PDF, ZIP, or folder to load its values.</span>
+  <span class="up-status" id="upStatus">Click Upload Machine (PDF or ZIP), or drag a machine folder onto the button.</span>
 </div>
 <div id="pdfPicker" style="max-width:1240px;margin:0 auto 10px;display:none;background:#fff;border:1px solid #dbe2ee;border-radius:8px;padding:12px 15px;">
   <div style="font-size:13px;font-weight:700;color:#0b2d73;margin-bottom:8px;" id="pdfPickerTitle">Select Machine PDF</div>
@@ -567,21 +564,17 @@ function showPicker(title, choices){
 }
 function hidePicker(){ document.getElementById('pdfPicker').style.display='none'; }
 
-/* PDF button */
-document.getElementById('pdfBtn').addEventListener('click',function(){ document.getElementById('pdfInput').click(); });
-document.getElementById('pdfInput').addEventListener('change',async function(e){
-  var f=e.target.files[0]; if(!f)return;
+/* ---- handle a single PDF file ---- */
+async function loadPdfFile(file){
   hidePicker();
-  var buf=await f.arrayBuffer(); await processBuffer(buf, f.name);
-});
-
-/* ZIP button */
-document.getElementById('zipBtn').addEventListener('click',function(){ document.getElementById('zipInput').click(); });
-document.getElementById('zipInput').addEventListener('change',async function(e){
-  var f=e.target.files[0]; if(!f)return;
-  setStatus("Reading ZIP "+f.name+" …");
+  var buf=await file.arrayBuffer();
+  await processBuffer(buf, file.name);
+}
+/* ---- handle a ZIP file ---- */
+async function loadZipFile(file){
+  setStatus("Reading ZIP "+file.name+" …");
   try{
-    var zip=await JSZip.loadAsync(await f.arrayBuffer());
+    var zip=await JSZip.loadAsync(await file.arrayBuffer());
     var choices=[];
     zip.forEach(function(path,entry){
       if(!entry.dir && /\.pdf$/i.test(path)){
@@ -589,22 +582,72 @@ document.getElementById('zipInput').addEventListener('change',async function(e){
       }
     });
     if(choices.length===0){ setStatus("No PDF files found in the ZIP."); return; }
-    if(choices.length===1){ var b=await choices[0].getBuf(); await processBuffer(b, choices[0].name); return; }
-    showPicker("ZIP: "+f.name, choices);
+    if(choices.length===1){ var b=await choices[0].getBuf(); await processBuffer(b, choices[0].name); hidePicker(); return; }
+    showPicker("ZIP: "+file.name, choices);
     setStatus("ZIP loaded — select which PDF to open.");
   }catch(err){ setStatus("Could not read ZIP: "+err.message); }
-});
-
-/* FOLDER button */
-document.getElementById('folderBtn').addEventListener('click',function(){ document.getElementById('folderInput').click(); });
-document.getElementById('folderInput').addEventListener('change',async function(e){
-  var files=Array.prototype.slice.call(e.target.files||[]);
-  var pdfs=files.filter(function(f){ return /\.pdf$/i.test(f.name); });
-  if(pdfs.length===0){ setStatus("No PDF files found in the folder."); return; }
-  if(pdfs.length===1){ var b=await pdfs[0].arrayBuffer(); await processBuffer(b, (pdfs[0].webkitRelativePath||pdfs[0].name)); return; }
+}
+/* ---- handle a list of files (folder pick or folder drop) ---- */
+async function loadFileList(files){
+  var arr=Array.prototype.slice.call(files||[]);
+  var pdfs=arr.filter(function(f){ return /\.pdf$/i.test(f.name); });
+  var zips=arr.filter(function(f){ return /\.zip$/i.test(f.name); });
+  if(pdfs.length===0 && zips.length===1){ await loadZipFile(zips[0]); return; }
+  if(pdfs.length===0){ setStatus("No PDF files found."); return; }
+  if(pdfs.length===1){ var b=await pdfs[0].arrayBuffer(); await processBuffer(b, (pdfs[0].webkitRelativePath||pdfs[0].name)); hidePicker(); return; }
   var choices=pdfs.map(function(f){ return { name:(f.webkitRelativePath||f.name), getBuf:function(){ return f.arrayBuffer(); } }; });
   showPicker("Folder", choices);
   setStatus("Folder loaded — select which PDF to open.");
+}
+/* ---- route any single picked file by type ---- */
+async function routeFile(file){
+  if(!file)return;
+  if(/\.zip$/i.test(file.name)){ await loadZipFile(file); }
+  else if(/\.pdf$/i.test(file.name)){ await loadPdfFile(file); }
+  else { setStatus("Unsupported file. Please choose a PDF or ZIP."); }
+}
+
+/* Upload Machine button -> file picker (PDF or ZIP) */
+document.getElementById('uploadBtn').addEventListener('click',function(){ document.getElementById('fileInput').click(); });
+document.getElementById('fileInput').addEventListener('change',async function(e){ if(e.target.files[0]) await routeFile(e.target.files[0]); });
+/* hidden folder input (in case we trigger it) */
+document.getElementById('folderInput').addEventListener('change',async function(e){ await loadFileList(e.target.files); });
+
+/* Drag & drop onto the Upload Machine button: supports files AND folders */
+var upBtn=document.getElementById('uploadBtn');
+["dragenter","dragover"].forEach(function(ev){ upBtn.addEventListener(ev,function(e){ e.preventDefault(); e.stopPropagation(); upBtn.style.opacity="0.75"; }); });
+["dragleave","drop"].forEach(function(ev){ upBtn.addEventListener(ev,function(e){ e.preventDefault(); e.stopPropagation(); upBtn.style.opacity="1"; }); });
+upBtn.addEventListener('drop', async function(e){
+  var dt=e.dataTransfer; if(!dt)return;
+  var items=dt.items;
+  var collected=[];
+  /* recurse folder entries if the browser supports webkitGetAsEntry */
+  async function walk(entry, path){
+    return new Promise(function(resolve){
+      if(entry.isFile){
+        entry.file(function(f){ f._rel=(path||"")+f.name; collected.push(f); resolve(); });
+      } else if(entry.isDirectory){
+        var rdr=entry.createReader();
+        rdr.readEntries(async function(ents){
+          for(var i=0;i<ents.length;i++){ await walk(ents[i],(path||"")+entry.name+"/"); }
+          resolve();
+        });
+      } else { resolve(); }
+    });
+  }
+  if(items && items.length && items[0].webkitGetAsEntry){
+    var entries=[];
+    for(var i=0;i<items.length;i++){ var en=items[i].webkitGetAsEntry(); if(en) entries.push(en); }
+    for(var k=0;k<entries.length;k++){ await walk(entries[k],""); }
+    /* give collected files a .name via _rel for path display */
+    collected.forEach(function(f){ try{ Object.defineProperty(f,'webkitRelativePath',{value:f._rel||f.name}); }catch(ig){} });
+    if(collected.length){ await loadFileList(collected); return; }
+  }
+  /* fallback: plain files dropped */
+  if(dt.files && dt.files.length){
+    if(dt.files.length===1){ await routeFile(dt.files[0]); }
+    else { await loadFileList(dt.files); }
+  }
 });
 
 /* Load Selected PDF (from ZIP/folder picker) */
