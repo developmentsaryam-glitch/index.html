@@ -78,7 +78,7 @@
 <body>
 <div class="toolbar">
   <div style="position:relative;display:inline-block;">
-    <button class="up-btn" id="uploadBtn">&#128228; Upload Data Record &#9662;</button>
+    <button class="up-btn" id="uploadBtn">&#128228; Upload Machine &#9662;</button>
     <div id="uploadMenu" style="display:none;position:absolute;left:0;top:calc(100% + 4px);background:#fff;border:1px solid #cdd7e5;border-radius:8px;box-shadow:0 8px 20px rgba(15,23,42,.15);z-index:100;min-width:180px;overflow:hidden;">
       <a id="pickFile" style="display:block;padding:10px 14px;font-size:13px;color:#243043;text-decoration:none;cursor:pointer;border-bottom:1px solid #eef2f7;">&#128196; PDF or ZIP file</a>
       <a id="pickFolder" style="display:block;padding:10px 14px;font-size:13px;color:#243043;text-decoration:none;cursor:pointer;">&#128193; Machine folder</a>
@@ -722,6 +722,10 @@ function applyEditMode(){
       el.setAttribute('contenteditable','true');
       el.style.outline='1px dashed #b26a00';
       el.style.background='#fff7ec';
+      if(!el._editBound){
+        el.addEventListener('blur', function(){ if(EDIT_MODE){ harvestEdits(); } });
+        el._editBound = true;
+      }
     } else {
       el.removeAttribute('contenteditable');
       el.style.outline='';
@@ -769,22 +773,60 @@ function harvestEdits(){
   }
   updateArrayByLabel(DATA.general);
   updateArrayByLabel(DATA.ac);
-  /* table edits (settings2, pbh, dist, bridges, eval_rows, sensor) from #panel .subt */
-  var subt=document.querySelector('#panel .subt');
-  if(subt){
+  updateArrayByLabel(DATA.eval_kv);
+  /* SH2 signal rows live inside general — updateArrayByLabel(DATA.general) already covers them */
+
+  /* ALL per-tab subt tables: harvest generically based on the active tab */
+  var subts=document.querySelectorAll('#panel .subt');
+  subts.forEach(function(subt){
     var trs=subt.querySelectorAll('tr');
-    /* skip header row (index 0) */
-    var arrMap={ 'PBH':DATA.pbh, 'Bridges':DATA.bridges, 'Distance':DATA.dist };
-    var target=arrMap[tabName];
-    if(target){
-      for(var r=1;r<trs.length && (r-1)<target.length;r++){
-        var tds=trs[r].querySelectorAll('td');
-        for(var col=0;col<tds.length && col<target[r-1].length;col++){
-          target[r-1][col]=tds[col].textContent.trim();
-        }
+    /* SH1 (per-hole SH cols) writes back into DATA.settings sh fields */
+    if(tabName==='SH1'){
+      for(var r=1;r<trs.length && (r-1)<DATA.settings.length;r++){
+        var td=trs[r].querySelectorAll('td');
+        var s=DATA.settings[r-1];
+        if(td[1])s.shactive=td[1].textContent.trim();
+        if(td[2])s.numrh=td[2].textContent.trim();
+        if(td[3])s.distsh=td[3].textContent.trim();
+        if(td[4])s.numsh=td[4].textContent.trim();
+        if(td[5])s.shpower=td[5].textContent.trim();
+        if(td[6])s.shdc=td[6].textContent.trim();
+        if(td[7])s.shpulses=td[7].textContent.trim();
       }
     }
-  }
+    else if(tabName==='SH2'){
+      for(var r2=1;r2<trs.length && (r2-1)<DATA.settings2.length;r2++){
+        var td2=trs[r2].querySelectorAll('td');
+        for(var c2=0;c2<td2.length && c2<DATA.settings2[r2-1].length;c2++){ DATA.settings2[r2-1][c2]=td2[c2].textContent.trim(); }
+      }
+    }
+    else if(tabName==='PBH'){
+      for(var r3=1;r3<trs.length && (r3-1)<DATA.pbh.length;r3++){
+        var td3=trs[r3].querySelectorAll('td');
+        for(var c3=0;c3<td3.length && c3<DATA.pbh[r3-1].length;c3++){ DATA.pbh[r3-1][c3]=td3[c3].textContent.trim(); }
+      }
+    }
+    else if(tabName==='Bridges'){
+      for(var r4=1;r4<trs.length && (r4-1)<DATA.bridges.length;r4++){
+        var td4=trs[r4].querySelectorAll('td');
+        for(var c4=0;c4<td4.length && c4<DATA.bridges[r4-1].length;c4++){ DATA.bridges[r4-1][c4]=td4[c4].textContent.trim(); }
+      }
+    }
+    else if(tabName==='Distance'){
+      for(var r5=1;r5<trs.length && (r5-1)<DATA.dist.length;r5++){
+        var td5=trs[r5].querySelectorAll('td');
+        for(var c5=0;c5<td5.length && c5<DATA.dist[r5-1].length;c5++){ DATA.dist[r5-1][c5]=td5[c5].textContent.trim(); }
+      }
+    }
+    else if(tabName==='Sensor'){
+      for(var r6=1;r6<trs.length && (r6-1)<DATA.sensor.length;r6++){
+        var td6=trs[r6].querySelectorAll('td');
+        /* col0=param(label), col1=val1, col2=val2 */
+        if(td6[1])DATA.sensor[r6-1][1]=td6[1].textContent.trim();
+        if(td6[2])DATA.sensor[r6-1][2]=td6[2].textContent.trim();
+      }
+    }
+  });
 }
 
 /* ---------- SAVE PDF then EXIT ---------- */
