@@ -857,14 +857,39 @@ async function onExitClick(){
   var json = buildConfigJSON();
   var btn=document.getElementById('exitBtn'); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
   setStatus("Saving to Log " + LOG_ID + " …");
-  var form = new URLSearchParams();
-  form.append("logId", LOG_ID);
-  form.append("config", btoa(unescape(encodeURIComponent(json))));
-  setStatus("Saving configuration to Log " + LOG_ID + "…");
+  var payload = { logId: LOG_ID, config: btoa(unescape(encodeURIComponent(json))), rawName: "", rawData: "" };
+  var dbg = "";
+  if(RAW_FILE_BYTES && RAW_FILE_NAME){
+    dbg = "raw=" + RAW_FILE_NAME + " (" + RAW_FILE_BYTES.byteLength + " bytes)";
+    if(RAW_FILE_BYTES.byteLength <= RAW_MAX_BYTES){
+      try{
+        var b64 = abToBase64(RAW_FILE_BYTES);
+        payload.rawName = RAW_FILE_NAME;
+        payload.rawData = b64;
+        dbg = dbg + " -> b64 len=" + b64.length;
+      }catch(be){ dbg = dbg + " -> b64 ERROR " + be; }
+    } else {
+      dbg = dbg + " -> TOO LARGE (skip)";
+    }
+  } else {
+    dbg = "NO raw file captured";
+  }
+  setStatus("Saving… " + dbg);
   try{
-    await fetch(LOG_SAVE_WEBHOOK, { method:"POST", mode:"no-cors", body: form });
+    await fetch(LOG_SAVE_WEBHOOK, {
+      method:"POST",
+      mode:"no-cors",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(payload)
+    });
   }catch(e){ }
-  setStatus("Saved configuration to Log " + LOG_ID + ". Returning to the report…");
+  if(rawSent){
+    setStatus("Saved config + raw file to Log " + LOG_ID + ". Returning to the report…");
+  } else if(RAW_FILE_BYTES && RAW_FILE_BYTES.byteLength > RAW_MAX_BYTES){
+    setStatus("Saved config to Log " + LOG_ID + ". Raw file too large to auto-save — upload it to Machine Raw Upload manually. Returning…");
+  } else {
+    setStatus("Saved config to Log " + LOG_ID + ". Returning to the report…");
+  }
   document.getElementById('hint').textContent = "Configuration saved to Log record " + LOG_ID + ".";
   setTimeout(function(){
     var back = DETAIL_URL + LOG_ID;
@@ -874,7 +899,7 @@ async function onExitClick(){
     }catch(e){
       window.location.href = back;
     }
-  }, 1400);
+  }, 5000);
 }
 var _xb=document.getElementById('exitBtn'); if(_xb) _xb.addEventListener('click', onExitClick);
 var _eb=document.getElementById('editBtn');
