@@ -839,7 +839,7 @@ function harvestEdits(){
 var LOG_SAVE_WEBHOOK = "https://flow.zoho.com/896521609/flow/webhook/incoming?zapikey=1001.b6c8f1bb9592ee6236945c292490a20e.038b987f75e08c203f999d77a4a6d5a8&isdebug=false";
 var RAW_FILE_BYTES = null;   /* ArrayBuffer of the raw uploaded file (zip/pdf) */
 var RAW_FILE_NAME = "";      /* its filename */
-var RAW_MAX_BYTES = 3500000; /* ~3.5MB guard for base64 through Flow */
+var RAW_MAX_BYTES = 8000000; /* 8MB guard */
 function abToBase64(buf){
   var bytes = new Uint8Array(buf);
   var bin = "";
@@ -861,15 +861,24 @@ async function onExitClick(){
   form.append("logId", LOG_ID);
   form.append("config", btoa(unescape(encodeURIComponent(json))));
   var rawSent = false;
+  var dbg = "";
   if(RAW_FILE_BYTES && RAW_FILE_NAME){
+    dbg = "raw=" + RAW_FILE_NAME + " (" + RAW_FILE_BYTES.byteLength + " bytes)";
     if(RAW_FILE_BYTES.byteLength <= RAW_MAX_BYTES){
       try{
+        var b64 = abToBase64(RAW_FILE_BYTES);
         form.append("rawName", RAW_FILE_NAME);
-        form.append("rawData", abToBase64(RAW_FILE_BYTES));
+        form.append("rawData", b64);
         rawSent = true;
-      }catch(be){ rawSent = false; }
+        dbg = dbg + " -> sending b64 len=" + b64.length;
+      }catch(be){ rawSent = false; dbg = dbg + " -> b64 ERROR " + be; }
+    } else {
+      dbg = dbg + " -> TOO LARGE (skip)";
     }
+  } else {
+    dbg = "NO raw file captured";
   }
+  setStatus("Saving… " + dbg);
   try{
     await fetch(LOG_SAVE_WEBHOOK, { method:"POST", mode:"no-cors", body: form });
   }catch(e){ }
@@ -889,7 +898,7 @@ async function onExitClick(){
     }catch(e){
       window.location.href = back;
     }
-  }, 1400);
+  }, 5000);
 }
 var _xb=document.getElementById('exitBtn'); if(_xb) _xb.addEventListener('click', onExitClick);
 var _eb=document.getElementById('editBtn');
