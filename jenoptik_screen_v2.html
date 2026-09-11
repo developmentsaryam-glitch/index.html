@@ -857,17 +857,21 @@ async function onExitClick(){
   var json = buildConfigJSON();
   var btn=document.getElementById('exitBtn'); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
   setStatus("Saving to Log " + LOG_ID + " …");
-  var payload = { logId: LOG_ID, config: btoa(unescape(encodeURIComponent(json))), rawName: "", rawData: "" };
+  var form = new URLSearchParams();
+  form.append("logId", LOG_ID);
+  form.append("config", btoa(unescape(encodeURIComponent(json))));
+  var rawSent = false;
   var dbg = "";
   if(RAW_FILE_BYTES && RAW_FILE_NAME){
     dbg = "raw=" + RAW_FILE_NAME + " (" + RAW_FILE_BYTES.byteLength + " bytes)";
     if(RAW_FILE_BYTES.byteLength <= RAW_MAX_BYTES){
       try{
         var b64 = abToBase64(RAW_FILE_BYTES);
-        payload.rawName = RAW_FILE_NAME;
-        payload.rawData = b64;
-        dbg = dbg + " -> b64 len=" + b64.length;
-      }catch(be){ dbg = dbg + " -> b64 ERROR " + be; }
+        form.append("rawName", RAW_FILE_NAME);
+        form.append("rawData", b64);
+        rawSent = true;
+        dbg = dbg + " -> sending b64 len=" + b64.length;
+      }catch(be){ rawSent = false; dbg = dbg + " -> b64 ERROR " + be; }
     } else {
       dbg = dbg + " -> TOO LARGE (skip)";
     }
@@ -876,12 +880,7 @@ async function onExitClick(){
   }
   setStatus("Saving… " + dbg);
   try{
-    await fetch(LOG_SAVE_WEBHOOK, {
-      method:"POST",
-      mode:"no-cors",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify(payload)
-    });
+    await fetch(LOG_SAVE_WEBHOOK, { method:"POST", mode:"no-cors", body: form });
   }catch(e){ }
   if(rawSent){
     setStatus("Saved config + raw file to Log " + LOG_ID + ". Returning to the report…");
@@ -899,7 +898,7 @@ async function onExitClick(){
     }catch(e){
       window.location.href = back;
     }
-  }, 5000);
+  }, 3000);
 }
 var _xb=document.getElementById('exitBtn'); if(_xb) _xb.addEventListener('click', onExitClick);
 var _eb=document.getElementById('editBtn');
