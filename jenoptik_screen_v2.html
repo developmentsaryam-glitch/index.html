@@ -84,6 +84,10 @@
       <a id="pickFolder" style="display:block;padding:10px 14px;font-size:13px;color:#243043;text-decoration:none;cursor:pointer;">&#128193; Machine folder</a>
     </div>
   </div>
+  <a class="up-btn" id="homeBtn" href="https://creatorapp.zoho.com/sarathynds_saryam/jenoptik-logs/#Page:Dashboard" style="background:#5a636e;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path></svg>
+    Dashboard
+  </a>
   <button class="up-btn" id="editBtn" style="background:#b26a00;display:none;">Edit Values</button>
   <button class="up-btn" id="exitBtn" style="background:#16803c;display:none;">Save &amp; Exit</button>
   <input type="file" id="fileInput" accept="application/pdf,.zip,application/zip" style="display:none;">
@@ -563,7 +567,7 @@ function showPicker(title, choices){
   PDF_CHOICES=choices;
   var picker=document.getElementById('pdfPicker');
   var sel=document.getElementById('pdfSelect');
-  document.getElementById('pdfPickerTitle').textContent=title+" — "+choices.length+" PDF file(s) found";
+  document.getElementById('pdfPickerTitle').textContent=title+" — "+choices.length+" PDF file(s) found. Choose one and click Load; you can switch and load another anytime.";
   sel.innerHTML="";
   choices.forEach(function(ch,i){ var o=document.createElement('option'); o.value=i; o.textContent=ch.name; sel.appendChild(o); });
   picker.style.display='block';
@@ -578,6 +582,7 @@ async function loadPdfFile(file){
 }
 /* ---- handle a ZIP file ---- */
 async function loadZipFile(file){
+  try{ if(!RAW_FILE_BYTES){ RAW_FILE_BYTES = await file.arrayBuffer(); RAW_FILE_NAME = file.name; } }catch(lzx){}
   setStatus("Reading ZIP "+file.name+" …");
   try{
     var zip=await JSZip.loadAsync(await file.arrayBuffer());
@@ -598,7 +603,7 @@ async function loadFileList(files){
   var arr=Array.prototype.slice.call(files||[]);
   var pdfs=arr.filter(function(f){ return /\.pdf$/i.test(f.name); });
   var zips=arr.filter(function(f){ return /\.zip$/i.test(f.name); });
-  if(pdfs.length===0 && zips.length===1){ await loadZipFile(zips[0]); return; }
+  if(pdfs.length===0 && zips.length===1){ try{ RAW_FILE_BYTES=await zips[0].arrayBuffer(); RAW_FILE_NAME=zips[0].name; }catch(zx){} await loadZipFile(zips[0]); return; }
   if(pdfs.length===0){ setStatus("No PDF files found."); return; }
   if(pdfs.length===1){ var b=await pdfs[0].arrayBuffer(); await processBuffer(b, (pdfs[0].webkitRelativePath||pdfs[0].name)); hidePicker(); return; }
   var choices=pdfs.map(function(f){ return { name:(f.webkitRelativePath||f.name), getBuf:function(){ return f.arrayBuffer(); } }; });
@@ -607,6 +612,7 @@ async function loadFileList(files){
 }
 /* ---- route any single picked file by type ---- */
 async function routeFile(file){
+  try{ RAW_FILE_BYTES = await file.arrayBuffer(); RAW_FILE_NAME = file.name; }catch(rfx){ RAW_FILE_BYTES=null; RAW_FILE_NAME=""; }
   if(!file)return;
   if(/\.zip$/i.test(file.name)){ await loadZipFile(file); }
   else if(/\.pdf$/i.test(file.name)){ await loadPdfFile(file); }
@@ -666,7 +672,7 @@ document.getElementById('loadSelectedBtn').addEventListener('click',async functi
   var idx=parseInt(document.getElementById('pdfSelect').value,10);
   if(isNaN(idx)||!PDF_CHOICES[idx])return;
   setStatus("Loading "+PDF_CHOICES[idx].name+" …");
-  try{ var buf=await PDF_CHOICES[idx].getBuf(); await processBuffer(buf, PDF_CHOICES[idx].name); hidePicker(); }
+  try{ var buf=await PDF_CHOICES[idx].getBuf(); await processBuffer(buf, PDF_CHOICES[idx].name); /* keep picker open to switch files */ }
   catch(err){ setStatus("Could not load PDF: "+err.message); }
 });
 
@@ -831,6 +837,18 @@ function harvestEdits(){
 
 /* ---------- SAVE PDF then EXIT ---------- */
 var LOG_SAVE_WEBHOOK = "https://flow.zoho.com/896521609/flow/webhook/incoming?zapikey=1001.b6c8f1bb9592ee6236945c292490a20e.038b987f75e08c203f999d77a4a6d5a8&isdebug=false";
+var RAW_FILE_BYTES = null;   /* ArrayBuffer of the raw uploaded file (zip/pdf) */
+var RAW_FILE_NAME = "";      /* its filename */
+var RAW_MAX_BYTES = 3500000; /* ~3.5MB guard for base64 through Flow */
+function abToBase64(buf){
+  var bytes = new Uint8Array(buf);
+  var bin = "";
+  var chunk = 0x8000;
+  for(var i=0;i<bytes.length;i+=chunk){
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i+chunk));
+  }
+  return btoa(bin);
+}
 var DETAIL_URL = "https://creatorapp.zoho.com/sarathynds_saryam/jenoptik-logs/#Page:Reports_Detail_View?record_id=";
 async function onExitClick(){
   if(!PDF_LOADED){ setStatus("Load a PDF first."); return; }
@@ -842,10 +860,26 @@ async function onExitClick(){
   var form = new URLSearchParams();
   form.append("logId", LOG_ID);
   form.append("config", btoa(unescape(encodeURIComponent(json))));
+  var rawSent = false;
+  if(RAW_FILE_BYTES && RAW_FILE_NAME){
+    if(RAW_FILE_BYTES.byteLength <= RAW_MAX_BYTES){
+      try{
+        form.append("rawName", RAW_FILE_NAME);
+        form.append("rawData", abToBase64(RAW_FILE_BYTES));
+        rawSent = true;
+      }catch(be){ rawSent = false; }
+    }
+  }
   try{
     await fetch(LOG_SAVE_WEBHOOK, { method:"POST", mode:"no-cors", body: form });
   }catch(e){ }
-  setStatus("Saved to Log " + LOG_ID + ". Returning to the report…");
+  if(rawSent){
+    setStatus("Saved config + raw file to Log " + LOG_ID + ". Returning to the report…");
+  } else if(RAW_FILE_BYTES && RAW_FILE_BYTES.byteLength > RAW_MAX_BYTES){
+    setStatus("Saved config to Log " + LOG_ID + ". Raw file too large to auto-save — upload it to Machine Raw Upload manually. Returning…");
+  } else {
+    setStatus("Saved config to Log " + LOG_ID + ". Returning to the report…");
+  }
   document.getElementById('hint').textContent = "Configuration saved to Log record " + LOG_ID + ".";
   setTimeout(function(){
     var back = DETAIL_URL + LOG_ID;
