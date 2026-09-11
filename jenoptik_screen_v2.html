@@ -860,35 +860,11 @@ async function onExitClick(){
   var form = new URLSearchParams();
   form.append("logId", LOG_ID);
   form.append("config", btoa(unescape(encodeURIComponent(json))));
-  var rawSent = false;
-  var dbg = "";
-  if(RAW_FILE_BYTES && RAW_FILE_NAME){
-    dbg = "raw=" + RAW_FILE_NAME + " (" + RAW_FILE_BYTES.byteLength + " bytes)";
-    if(RAW_FILE_BYTES.byteLength <= RAW_MAX_BYTES){
-      try{
-        var b64 = abToBase64(RAW_FILE_BYTES);
-        form.append("rawName", RAW_FILE_NAME);
-        form.append("rawData", b64);
-        rawSent = true;
-        dbg = dbg + " -> sending b64 len=" + b64.length;
-      }catch(be){ rawSent = false; dbg = dbg + " -> b64 ERROR " + be; }
-    } else {
-      dbg = dbg + " -> TOO LARGE (skip)";
-    }
-  } else {
-    dbg = "NO raw file captured";
-  }
-  setStatus("Saving… " + dbg);
+  setStatus("Saving configuration to Log " + LOG_ID + "…");
   try{
     await fetch(LOG_SAVE_WEBHOOK, { method:"POST", mode:"no-cors", body: form });
   }catch(e){ }
-  if(rawSent){
-    setStatus("Saved config + raw file to Log " + LOG_ID + ". Returning to the report…");
-  } else if(RAW_FILE_BYTES && RAW_FILE_BYTES.byteLength > RAW_MAX_BYTES){
-    setStatus("Saved config to Log " + LOG_ID + ". Raw file too large to auto-save — upload it to Machine Raw Upload manually. Returning…");
-  } else {
-    setStatus("Saved config to Log " + LOG_ID + ". Returning to the report…");
-  }
+  setStatus("Saved configuration to Log " + LOG_ID + ". Returning to the report…");
   document.getElementById('hint').textContent = "Configuration saved to Log record " + LOG_ID + ".";
   setTimeout(function(){
     var back = DETAIL_URL + LOG_ID;
@@ -898,7 +874,7 @@ async function onExitClick(){
     }catch(e){
       window.location.href = back;
     }
-  }, 5000);
+  }, 1400);
 }
 var _xb=document.getElementById('exitBtn'); if(_xb) _xb.addEventListener('click', onExitClick);
 var _eb=document.getElementById('editBtn');
